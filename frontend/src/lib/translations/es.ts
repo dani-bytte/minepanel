@@ -532,6 +532,8 @@ export const es: Record<TranslationKey, string> = {
   alwaysRestart: 'Siempre reiniciar',
   restartOnFailure: 'Reiniciar en caso de error',
   restartUnlessStopped: 'Reiniciar a menos que se detenga manualmente',
+  autoStopForcesNoRestart:
+    'Auto-Stop requiere la política de reinicio "No reiniciar" y la fuerza automáticamente.',
   no: 'No',
   always: 'Siempre',
   onFailure: 'En caso de error',

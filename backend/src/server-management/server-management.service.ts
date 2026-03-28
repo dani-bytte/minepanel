@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { exec } from 'node:child_process';
-import type { ExecOptions } from 'node:child_process';
+import { exec, spawn } from 'node:child_process';
+import type { ExecOptions, SpawnOptionsWithoutStdio } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as path from 'node:path';
 import * as fs from 'fs-extra';
@@ -27,10 +27,6 @@ const DOCKER_COMMANDS = {
   STATS_ALL: String.raw`docker stats --no-stream --format "{{.Container}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}"`,
   LOGS: (containerId: string, lines: number) => `docker logs --tail ${lines} --timestamps ${containerId} 2>&1`,
   LOGS_SINCE: (containerId: string, since: string) => `docker logs --since ${since} --timestamps ${containerId} 2>&1`,
-  EXEC_RCON: (containerId: string, port: string, password: string, command: string) => {
-    const passwordArg = password ? ' --password ' + password : '';
-    return `docker exec -i ${containerId} rcon-cli --port ${port}${passwordArg} "${command}"`;
-  },
   // Bedrock: TODO - commands disabled due to TTY/permission issues with send-command
   EXEC_BEDROCK: (_containerId: string, _command: string) => {
     return `echo "Commands not supported for Bedrock servers yet"`;
@@ -81,6 +77,9 @@ export class ServerManagementService {
   private readonly SERVERS_DIR: string;
   private readonly BASE_DIR: string;
   private readonly COMPOSE_PROJECT?: string;
+  private static readonly ANSI_ESCAPE_SEQUENCE_REGEX =
+    // Adapted from common ANSI escape matching patterns (CSI + OSC + related control sequences).
+    /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[a-zA-Z\d]*)*)?\u0007)|(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]))/g;
 
   constructor(
     private readonly configService: ConfigService,
@@ -134,6 +133,105 @@ export class ServerManagementService {
 
   private async execComposeCommand(serverId: string, command: string) {
     return execAsync(command, this.getComposeExecOptions(serverId));
+  }
+
+  private executeProcess(
+    command: string,
+    args: string[],
+    options?: SpawnOptionsWithoutStdio,
+  ): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(command, args, {
+        ...options,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.on('data', (chunk) => {
+        stdout += chunk.toString();
+      });
+
+      child.stderr.on('data', (chunk) => {
+        stderr += chunk.toString();
+      });
+
+      child.on('error', (error) => {
+        reject(error);
+      });
+
+      child.on('close', (exitCode) => {
+        resolve({ stdout, stderr, exitCode });
+      });
+    });
+  }
+
+  private stripAnsiEscapeSequences(text: string): string {
+    return text.replace(ServerManagementService.ANSI_ESCAPE_SEQUENCE_REGEX, '');
+  }
+
+  private normalizeCommandInput(command: string): string {
+    const commandWithoutAnsi = this.stripAnsiEscapeSequences(command);
+    return commandWithoutAnsi.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
+  }
+
+  private sanitizeCommandOutput(output: string): string {
+    const withoutAnsi = this.stripAnsiEscapeSequences(output);
+    return withoutAnsi.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '');
+  }
+
+  private tokenizeRconCommand(command: string): string[] {
+    const tokenPattern = /"([^"\\]|\\.)*"|'([^'\\]|\\.)*'|\S+/g;
+    const tokens = command.match(tokenPattern);
+    return tokens && tokens.length > 0 ? tokens : [command];
+  }
+
+  private isRconCommandError(output: string): boolean {
+    return /Incorrect argument for command|Unknown or incomplete command|Unknown command|commands\./i.test(output);
+  }
+
+  private async executeRconWithFallback(
+    containerId: string,
+    rconPort: string,
+    rconPassword: string | undefined,
+    normalizedCommand: string,
+  ): Promise<CommandExecutionResponse> {
+    const baseArgs = ['exec', containerId, 'rcon-cli', '--port', rconPort];
+    if (rconPassword) {
+      baseArgs.push('--password', rconPassword);
+    }
+
+    const tokenizedCommand = this.tokenizeRconCommand(normalizedCommand);
+    const styles: string[][] = [tokenizedCommand];
+
+    // Some environments/architectures handle full command-as-single-arg more reliably.
+    if (tokenizedCommand.length > 1) {
+      styles.push([normalizedCommand]);
+    }
+
+    let lastError = 'Command execution failed';
+
+    for (const commandStyle of styles) {
+      const { stdout, stderr, exitCode } = await this.executeProcess('docker', [...baseArgs, ...commandStyle]);
+      const sanitizedStdout = this.sanitizeCommandOutput(stdout || '');
+      const sanitizedStderr = this.sanitizeCommandOutput(stderr || '');
+      const combinedOutput = (sanitizedStdout || sanitizedStderr || '').trim();
+
+      if (exitCode !== 0) {
+        lastError = combinedOutput || `rcon-cli exited with code ${exitCode}`;
+        continue;
+      }
+
+      if (this.isRconCommandError(combinedOutput)) {
+        lastError = combinedOutput || 'Command syntax rejected by server';
+        continue;
+      }
+
+      return { success: true, output: combinedOutput || 'Command executed successfully' };
+    }
+
+    return { success: false, output: `Execution failed: ${lastError}` };
   }
 
   private async getUserSettings(): Promise<{
@@ -959,6 +1057,11 @@ export class ServerManagementService {
         return { success: false, output: 'Invalid server ID' };
       }
 
+      const normalizedCommand = this.normalizeCommandInput(command);
+      if (!normalizedCommand) {
+        return { success: false, output: 'Invalid command payload: command is empty after normalization' };
+      }
+
       if (!(await this.serverExists(serverId))) {
         return { success: false, output: 'Server not found' };
       }
@@ -973,30 +1076,30 @@ export class ServerManagementService {
       // Use different command execution based on edition
       if (edition === 'BEDROCK') {
         // Bedrock uses send-command script (output only visible in container logs)
-        const { stderr } = await execAsync(DOCKER_COMMANDS.EXEC_BEDROCK(containerId, command));
+        const { stderr } = await execAsync(DOCKER_COMMANDS.EXEC_BEDROCK(containerId, normalizedCommand));
+        const sanitizedStderr = this.sanitizeCommandOutput(stderr || '');
 
-        if (stderr) {
-          this.logger.warn(`Command execution error on ${serverId}: ${stderr}`);
-          return { success: false, output: `Error executing command: ${stderr}` };
+        if (sanitizedStderr) {
+          this.logger.warn(`Command execution error on ${serverId}: ${sanitizedStderr}`);
+          return { success: false, output: `Execution failed: ${sanitizedStderr}` };
         }
 
-        this.logger.log(`Bedrock command executed on ${serverId}: ${command}`);
+        this.logger.log(`Bedrock command executed on ${serverId}: ${normalizedCommand}`);
         return { success: true, output: 'Command sent (output visible in server logs)' };
       }
 
-      // Java uses RCON
-      const { stdout, stderr } = await execAsync(DOCKER_COMMANDS.EXEC_RCON(containerId, rconPort, rconPassword || '', command));
-
-      if (stderr) {
-        this.logger.warn(`Command execution error on ${serverId}: ${stderr}`);
-        return { success: false, output: `Error executing command: ${stderr}` };
+      // Java uses RCON with fallback argument styles for cross-platform reliability.
+      const rconResult = await this.executeRconWithFallback(containerId, rconPort, rconPassword, normalizedCommand);
+      if (!rconResult.success) {
+        this.logger.warn(`Command execution failed on ${serverId}: ${rconResult.output}`);
+        return rconResult;
       }
 
-      this.logger.log(`Command executed on ${serverId}: ${command}`);
-      return { success: true, output: stdout || 'Command executed successfully' };
+      this.logger.log(`Command executed on ${serverId}: ${normalizedCommand}`);
+      return rconResult;
     } catch (error) {
       this.logger.error(`Error executing command on server ${serverId}`, error);
-      return { success: false, output: `Error: ${(error as Error).message}` };
+      return { success: false, output: `Execution failed: ${(error as Error).message}` };
     }
   }
 

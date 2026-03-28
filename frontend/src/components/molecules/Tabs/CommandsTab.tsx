@@ -100,6 +100,7 @@ export const CommandsTab: FC<CommandsTabProps> = ({ serverId, serverStatus, rcon
   // World management
   const handleSetDifficulty = (diff: string) => runCommand(`difficulty ${diff}`, t("difficultyChanged"));
   const handleGamerule = (rule: string, value: boolean) => runCommand(`gamerule ${rule} ${value}`, t("gameruleChanged"));
+  const handlePvpToggle = (enable: boolean) => runCommand(`pvp ${enable ? "true" : "false"}`, t("gameruleChanged"));
   const handleKillEntities = (type: string) => runCommand(`kill @e[type=${type}]`, t("entitiesKilled"));
   const handleKillAllMobs = () => runCommand("kill @e[type=!player]", t("entitiesKilled"));
   const handleClearDroppedItems = () => runCommand("kill @e[type=item]", t("itemsCleared"));
@@ -652,10 +653,10 @@ export const CommandsTab: FC<CommandsTabProps> = ({ serverId, serverStatus, rcon
                 <Button type="button" variant="outline" size="sm" onClick={() => handleGamerule("doFireTick", false)} className="text-xs gap-1 bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-orange-600/20 hover:border-orange-500 hover:text-orange-400">
                   <Flame className="h-3 w-3" /> {t("disableFire")}
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => handleGamerule("pvp", true)} className="text-xs gap-1 bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-red-600/20 hover:border-red-500 hover:text-red-400">
+                <Button type="button" variant="outline" size="sm" onClick={() => handlePvpToggle(true)} className="text-xs gap-1 bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-red-600/20 hover:border-red-500 hover:text-red-400">
                   <Swords className="h-3 w-3" /> PvP ON
                 </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => handleGamerule("pvp", false)} className="text-xs gap-1 bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-green-600/20 hover:border-green-500 hover:text-green-400">
+                <Button type="button" variant="outline" size="sm" onClick={() => handlePvpToggle(false)} className="text-xs gap-1 bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-green-600/20 hover:border-green-500 hover:text-green-400">
                   <Shield className="h-3 w-3" /> PvP OFF
                 </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => handleGamerule("doWeatherCycle", false)} className="text-xs gap-1 bg-gray-800/60 border-gray-600 text-gray-200 hover:bg-cyan-600/20 hover:border-cyan-500 hover:text-cyan-400">

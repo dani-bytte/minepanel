@@ -523,6 +523,7 @@ export const en = {
   alwaysRestart: 'Always restart',
   restartOnFailure: 'Restart on failure',
   restartUnlessStopped: 'Restart unless stopped',
+  autoStopForcesNoRestart: 'Auto-Stop requires restart policy "No restart" and forces it automatically.',
   no: 'No',
   always: 'Always',
   onFailure: 'On failure',

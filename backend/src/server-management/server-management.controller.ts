@@ -7,6 +7,7 @@ import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 import { SettingsService } from 'src/users/services/settings.service';
 import { PayloadToken } from 'src/auth/models/token.model';
 import { ProxyService } from 'src/proxy/proxy.service';
+import { ExecuteCommandDto } from './dto/execute-command.dto';
 
 @Controller('servers')
 @UseGuards(JwtAuthGuard)
@@ -278,7 +279,11 @@ export class ServerManagementController {
   }
 
   @Post(':id/command')
-  async executeCommand(@Param('id') id: string, @Body() body: { command: string; rconPort: string; rconPassword?: string }) {
+  async executeCommand(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+    body: ExecuteCommandDto,
+  ) {
     return this.managementService.executeCommand(id, body.command, body.rconPort, body.rconPassword);
   }
 

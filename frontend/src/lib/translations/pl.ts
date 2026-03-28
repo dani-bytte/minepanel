@@ -522,6 +522,8 @@ export const pl: Record<TranslationKey, string> = {
   alwaysRestart: 'Zawsze restartuj',
   restartOnFailure: 'Uruchom ponownie w przypadku awarii',
   restartUnlessStopped: 'Uruchom ponownie, chyba że zatrzymane',
+  autoStopForcesNoRestart:
+    'Auto-Stop wymaga zasady restartu „Bez restartu” i ustawia ją automatycznie.',
   no: 'Nie',
   always: 'Zawsze',
   onFailure: 'W przypadku awarii',

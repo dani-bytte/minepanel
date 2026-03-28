@@ -529,6 +529,8 @@ export const de: Record<TranslationKey, string> = {
   alwaysRestart: 'Immer neustarten',
   restartOnFailure: 'Bei Fehler neustarten',
   restartUnlessStopped: 'Neustarten außer gestoppt',
+  autoStopForcesNoRestart:
+    'Auto-Stop erfordert die Neustartrichtlinie "Kein Neustart" und erzwingt sie automatisch.',
   no: 'Nein',
   always: 'Immer',
   onFailure: 'Bei Fehler',

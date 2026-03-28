@@ -39,6 +39,17 @@ export class DockerComposeService {
     return path.join(this.SERVERS_DIR, serverId, 'mc-data');
   }
 
+  private normalizeAutoStopRestartPolicy(config: ServerConfig): ServerConfig {
+    if (!config.enableAutoStop) {
+      return config;
+    }
+
+    return {
+      ...config,
+      restartPolicy: 'no',
+    };
+  }
+
   private async findAvailablePort(startPort: number, serverId: string): Promise<number> {
     try {
       const serverIds = await this.getAllServerIds();
@@ -223,7 +234,7 @@ export class DockerComposeService {
       if (edition === 'JAVA') {
         this.parseServerTypeSpecificConfig(serverConfig, env);
       }
-      return serverConfig;
+      return this.normalizeAutoStopRestartPolicy(serverConfig);
     } catch (error) {
       this.logger.error(`Error loading config for server ${serverId}`, error);
       return this.createDefaultConfig(serverId);
@@ -730,7 +741,10 @@ export class DockerComposeService {
 
     const edition = config.edition ?? 'JAVA';
     const defaultConfig = this.createDefaultConfig(id, edition);
-    const serverConfig = { ...defaultConfig, ...config };
+    const serverConfig = this.normalizeAutoStopRestartPolicy({
+      ...defaultConfig,
+      ...config,
+    });
 
     await this.generateDockerComposeFile(serverConfig, proxyEnabled);
     return serverConfig;
@@ -777,7 +791,10 @@ export class DockerComposeService {
 
   async updateServerConfig(id: string, config: Partial<ServerConfig>, proxyEnabled = false): Promise<ServerConfig | null> {
     const currentConfig = await this.loadServerConfigFromDockerCompose(id);
-    const updatedConfig = { ...currentConfig, ...config };
+    const updatedConfig = this.normalizeAutoStopRestartPolicy({
+      ...currentConfig,
+      ...config,
+    } as ServerConfig);
 
     await this.generateDockerComposeFile(updatedConfig, proxyEnabled);
     return updatedConfig;
@@ -1209,24 +1226,26 @@ export class DockerComposeService {
   }
 
   async generateDockerComposeFile(config: ServerConfig, proxyEnabled: boolean = false): Promise<void> {
+    const normalizedConfig = this.normalizeAutoStopRestartPolicy(config);
+
     const serverDir = path.join(this.SERVERS_DIR, config.id);
     await fs.ensureDir(serverDir);
 
-    const edition = config.edition ?? 'JAVA';
+    const edition = normalizedConfig.edition ?? 'JAVA';
     const strategy = ServerStrategyFactory.create(edition);
 
     // Use strategy to build environment
-    const environment = strategy.buildEnvironment(config);
+    const environment = strategy.buildEnvironment(normalizedConfig);
 
     // When proxy is enabled, servers don't expose ports to host, so no need to find available port
     // Note: Proxy only works with Java edition (mc-router doesn't support Bedrock)
-    const useProxy = proxyEnabled && config.useProxy !== false && edition === 'JAVA';
-    const availablePort = useProxy ? strategy.getInternalPort() : await this.ensurePortAvailable(config);
-    const volumes = this.parseVolumes(config);
-    const dockerComposeConfig = this.buildDockerComposeConfig(config, environment, volumes, availablePort, proxyEnabled, strategy);
+    const useProxy = proxyEnabled && normalizedConfig.useProxy !== false && edition === 'JAVA';
+    const availablePort = useProxy ? strategy.getInternalPort() : await this.ensurePortAvailable(normalizedConfig);
+    const volumes = this.parseVolumes(normalizedConfig);
+    const dockerComposeConfig = this.buildDockerComposeConfig(normalizedConfig, environment, volumes, availablePort, proxyEnabled, strategy);
 
-    if (config.enableBackup) {
-      await this.addBackupService(dockerComposeConfig, config, serverDir);
+    if (normalizedConfig.enableBackup) {
+      await this.addBackupService(dockerComposeConfig, normalizedConfig, serverDir);
     }
 
     let yamlContent = yaml.dump(dockerComposeConfig);
@@ -1245,6 +1264,6 @@ export class DockerComposeService {
       return labelsHeader + quotedLabels;
     });
 
-    await fs.writeFile(this.getDockerComposePath(config.id), yamlContent);
+    await fs.writeFile(this.getDockerComposePath(normalizedConfig.id), yamlContent);
   }
 }

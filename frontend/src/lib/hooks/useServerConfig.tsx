@@ -124,6 +124,17 @@ const defaultConfig: ServerConfig = {
   skipDownloadDefaults: false,
 };
 
+function normalizeAutoStopRestartPolicy(config: ServerConfig): ServerConfig {
+  if (!config.enableAutoStop) {
+    return config;
+  }
+
+  return {
+    ...config,
+    restartPolicy: 'no',
+  };
+}
+
 export function useServerConfig(serverId: string) {
   const { t } = useLanguage();
   const [config, setConfig] = useState<ServerConfig>(defaultConfig);
@@ -150,10 +161,10 @@ export function useServerConfig(serverId: string) {
           }
         }
 
-        setConfig({
+        setConfig(normalizeAutoStopRestartPolicy({
           ...defaultConfig,
           ...serverConfig,
-        });
+        }));
       } catch (error) {
         console.error('Error loading server config:', error);
         mcToast.error(t('loadConfigError'));
@@ -167,14 +178,25 @@ export function useServerConfig(serverId: string) {
   }, [serverId]);
 
   const updateConfig = <K extends keyof ServerConfig>(field: K, value: ServerConfig[K]) => {
-    setConfig((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setConfig((prev) => {
+      if (field === 'enableAutoStop') {
+        const enableAutoStop = Boolean(value);
+        return normalizeAutoStopRestartPolicy({
+          ...prev,
+          enableAutoStop,
+          restartPolicy: enableAutoStop ? 'no' : prev.restartPolicy,
+        });
+      }
+
+      return normalizeAutoStopRestartPolicy({
+        ...prev,
+        [field]: value,
+      });
+    });
   };
 
   const saveConfig = async (configToSave?: ServerConfig): Promise<boolean> => {
-    const dataToSave = configToSave || config;
+    const dataToSave = normalizeAutoStopRestartPolicy(configToSave || config);
 
     try {
       setIsSaving(true);

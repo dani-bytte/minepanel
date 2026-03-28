@@ -26,6 +26,7 @@ interface AdvancedTabProps {
 export const AdvancedTab: FC<AdvancedTabProps> = ({ config, updateConfig }) => {
   const { t } = useLanguage();
   const [newPort, setNewPort] = useState('');
+  const autoStopEnabled = config.enableAutoStop === true;
 
   const isJava = config.edition !== 'BEDROCK';
   const isCurseForge =
@@ -794,13 +795,17 @@ export const AdvancedTab: FC<AdvancedTabProps> = ({ config, updateConfig }) => {
             </TooltipProvider>
           </div>
           <Select
-            value={config.restartPolicy}
-            onValueChange={(value) =>
+            value={autoStopEnabled ? 'no' : config.restartPolicy}
+            onValueChange={(value) => {
+              if (autoStopEnabled && value !== 'no') {
+                return;
+              }
+
               updateConfig(
                 'restartPolicy',
                 value as 'no' | 'always' | 'on-failure' | 'unless-stopped',
-              )
-            }
+              );
+            }}
           >
             <SelectTrigger
               id="restartPolicy"
@@ -810,12 +815,19 @@ export const AdvancedTab: FC<AdvancedTabProps> = ({ config, updateConfig }) => {
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-700 text-gray-200">
               <SelectItem value="no">{t('noRestart')}</SelectItem>
-              <SelectItem value="always">{t('alwaysRestart')}</SelectItem>
-              <SelectItem value="on-failure">{t('restartOnFailure')}</SelectItem>
-              <SelectItem value="unless-stopped">{t('restartUnlessStopped')}</SelectItem>
+              <SelectItem value="always" disabled={autoStopEnabled}>
+                {t('alwaysRestart')}
+              </SelectItem>
+              <SelectItem value="on-failure" disabled={autoStopEnabled}>
+                {t('restartOnFailure')}
+              </SelectItem>
+              <SelectItem value="unless-stopped" disabled={autoStopEnabled}>
+                {t('restartUnlessStopped')}
+              </SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-400">{t('restartPolicyDesc')}</p>
+          {autoStopEnabled && <p className="text-xs text-amber-400">{t('autoStopForcesNoRestart')}</p>}
         </div>
 
         <div className="space-y-2 p-4 rounded-md bg-gray-800/50 border border-gray-700/50">

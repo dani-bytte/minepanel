@@ -208,6 +208,16 @@ After reset, log in with default credentials (admin/admin).
 
 ## Server Commands
 
+### Auto-Stop + Restart Policy Compatibility
+
+When **Auto-Stop** is enabled, restart policy must be **`no`**.
+
+- Frontend behavior: enabling Auto-Stop immediately switches restart policy to **No restart**
+- Backend behavior: incompatible saves are normalized automatically to `restartPolicy: no`
+- Existing servers with incompatible values are fixed on next save
+
+This prevents Docker from automatically restarting a server after Auto-Stop intentionally shuts it down.
+
 ### Java Edition (RCON)
 
 Java servers use RCON for command execution. Commands are sent and responses are returned directly:
@@ -218,6 +228,13 @@ Java servers use RCON for command execution. Commands are sent and responses are
 /gamemode creative player1
 /time set day
 ```
+
+Command payloads are validated and normalized before execution:
+
+- Leading/trailing whitespace is trimmed
+- Control characters are removed
+- Empty commands after normalization are rejected with a validation error
+- Console output is sanitized to remove ANSI escape sequences
 
 ### Bedrock Edition (send-command)
 
@@ -247,6 +264,11 @@ Unlike RCON, Bedrock commands don't return output directly. Check the Logs tab t
 | `/whitelist` | ✅ | ✅ | Manage whitelist |
 
 *Bedrock uses XUIDs instead of player names for permissions.
+
+### Quick Actions Notes
+
+- `keepInventory`, `doDaylightCycle`, and similar toggles use `gamerule` commands
+- PvP toggle uses the server command `pvp true|false` (not `gamerule pvp`)
 
 ---
 

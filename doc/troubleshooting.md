@@ -675,6 +675,42 @@ environment:
 docker logs <bedrock-server-name>
 ```
 
+## Command & Auto-Stop Issues
+
+### Server Restarts After Auto-Stop
+
+**Symptoms:** Server stops due to Auto-Stop, then container starts again immediately.
+
+**Cause:** Restart policy is incompatible with Auto-Stop.
+
+**Solution:**
+
+1. Enable Auto-Stop from the UI.
+2. Confirm restart policy is set to **No restart**.
+3. Save configuration.
+
+Minepanel now enforces this rule automatically on save (`enableAutoStop=true` => `restartPolicy=no`).
+
+### Command Fails with Strange Characters / Malformed Input
+
+**Symptoms:** Commands fail unexpectedly, especially after paste from terminal/chat tools.
+
+**Cause:** Hidden control or ANSI characters in command input.
+
+**Solution:**
+
+- Re-type or paste plain text command.
+- Minepanel now normalizes command input (trim + control-char removal).
+- Empty commands after normalization are rejected as invalid payload.
+
+### Console Response Shows Color Codes
+
+**Symptoms:** Response includes raw ANSI sequences like `\x1b[32m`.
+
+**Solution:**
+
+Minepanel now strips ANSI escape sequences from command responses before returning them to the frontend.
+
 ---
 
 ## Still Having Issues?

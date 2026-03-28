@@ -546,6 +546,8 @@ export const nl: Record<TranslationKey, string> = {
   alwaysRestart: 'Altijd herstarten',
   restartOnFailure: 'Herstarten bij problemen',
   restartUnlessStopped: 'Herstarten tenzij gestopt',
+  autoStopForcesNoRestart:
+    'Auto-stop vereist het herstartbeleid "Niet herstarten" en forceert dit automatisch.',
   no: 'Nee',
   always: 'Altijd',
   onFailure: 'Bij problemen',

@@ -18,6 +18,7 @@ jest.mock('fs-extra', () => ({
 // Mock child_process
 jest.mock('node:child_process', () => ({
   exec: jest.fn(),
+  spawn: jest.fn(),
 }));
 
 // Mock util.promisify to return our mock function
@@ -238,6 +239,147 @@ describe('ServerManagementService', () => {
 
       expect(result.success).toBe(false);
       expect(result.output).toContain('Container not found');
+    });
+
+    it('should reject empty command after normalization', async () => {
+      const result = await service.executeCommand('myserver', '\u001b[31m   \u0007', '25575');
+
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('Invalid command payload');
+    });
+
+    it('should execute Java command using argument-safe process args', async () => {
+      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+
+      jest.spyOn(service as any, 'findContainerId').mockResolvedValue('container123');
+      jest.spyOn(service as any, 'getServerEdition').mockResolvedValue('JAVA');
+      const executeProcessSpy = jest.spyOn(service as any, 'executeProcess').mockResolvedValue({
+        stdout: 'Done',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      const result = await service.executeCommand('myserver', 'say hello world', '25575', 'secret');
+
+      expect(result.success).toBe(true);
+      expect(executeProcessSpy).toHaveBeenCalledWith(
+        'docker',
+        ['exec', 'container123', 'rcon-cli', '--port', '25575', '--password', 'secret', 'say', 'hello', 'world'],
+      );
+    });
+
+    it('should normalize command before execution by trimming and removing control chars', async () => {
+      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+
+      jest.spyOn(service as any, 'findContainerId').mockResolvedValue('container123');
+      jest.spyOn(service as any, 'getServerEdition').mockResolvedValue('JAVA');
+      const executeProcessSpy = jest.spyOn(service as any, 'executeProcess').mockResolvedValue({
+        stdout: 'ok',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      await service.executeCommand('myserver', ' \u001b[32msay hello\u001b[0m\u0007 ', '25575');
+
+      expect(executeProcessSpy).toHaveBeenCalledWith(
+        'docker',
+        ['exec', 'container123', 'rcon-cli', '--port', '25575', 'say', 'hello'],
+      );
+    });
+
+    it('should strip ANSI escape codes from command output', async () => {
+      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+
+      jest.spyOn(service as any, 'findContainerId').mockResolvedValue('container123');
+      jest.spyOn(service as any, 'getServerEdition').mockResolvedValue('JAVA');
+      jest.spyOn(service as any, 'executeProcess').mockResolvedValue({
+        stdout: '\u001b[32mOK\u001b[0m',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      const result = await service.executeCommand('myserver', 'list', '25575');
+
+      expect(result.success).toBe(true);
+      expect(result.output).toBe('OK');
+    });
+
+    it('should send gamerule command as separate rcon args', async () => {
+      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+
+      jest.spyOn(service as any, 'findContainerId').mockResolvedValue('container123');
+      jest.spyOn(service as any, 'getServerEdition').mockResolvedValue('JAVA');
+      const executeProcessSpy = jest.spyOn(service as any, 'executeProcess').mockResolvedValue({
+        stdout: 'Game rule has been updated',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      const result = await service.executeCommand('myserver', 'gamerule keepInventory true', '25575');
+
+      expect(result.success).toBe(true);
+      expect(executeProcessSpy).toHaveBeenCalledWith(
+        'docker',
+        ['exec', 'container123', 'rcon-cli', '--port', '25575', 'gamerule', 'keepInventory', 'true'],
+      );
+    });
+
+    it('should fallback to single-arg command style when tokenized style is rejected', async () => {
+      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+
+      jest.spyOn(service as any, 'findContainerId').mockResolvedValue('container123');
+      jest.spyOn(service as any, 'getServerEdition').mockResolvedValue('JAVA');
+      const executeProcessSpy = jest
+        .spyOn(service as any, 'executeProcess')
+        .mockResolvedValueOnce({
+          stdout: 'Incorrect argument for commandgamerule keepInventory true<--[HERE]',
+          stderr: '',
+          exitCode: 0,
+        })
+        .mockResolvedValueOnce({
+          stdout: 'Game rule has been updated',
+          stderr: '',
+          exitCode: 0,
+        });
+
+      const result = await service.executeCommand('myserver', 'gamerule keepInventory true', '25575');
+
+      expect(result.success).toBe(true);
+      expect(executeProcessSpy).toHaveBeenNthCalledWith(1, 'docker', [
+        'exec',
+        'container123',
+        'rcon-cli',
+        '--port',
+        '25575',
+        'gamerule',
+        'keepInventory',
+        'true',
+      ]);
+      expect(executeProcessSpy).toHaveBeenNthCalledWith(2, 'docker', [
+        'exec',
+        'container123',
+        'rcon-cli',
+        '--port',
+        '25575',
+        'gamerule keepInventory true',
+      ]);
+    });
+
+    it('should mark brigadier syntax output as failure', async () => {
+      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+
+      jest.spyOn(service as any, 'findContainerId').mockResolvedValue('container123');
+      jest.spyOn(service as any, 'getServerEdition').mockResolvedValue('JAVA');
+      jest.spyOn(service as any, 'executeProcess').mockResolvedValue({
+        stdout: 'Unknown or incomplete command, see below for error',
+        stderr: '',
+        exitCode: 0,
+      });
+
+      const result = await service.executeCommand('myserver', 'gamerule keepInventory true', '25575');
+
+      expect(result.success).toBe(false);
+      expect(result.output).toContain('Execution failed');
     });
   });
 

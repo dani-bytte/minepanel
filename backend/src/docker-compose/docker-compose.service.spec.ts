@@ -83,5 +83,19 @@ describe('DockerComposeService', () => {
 
       expect(parsed.services.mc.networks['minepanel-network'].aliases).toEqual(['proxyserver']);
     });
+
+    it('should force restart policy to "no" when auto-stop is enabled', async () => {
+      const config = (service as any).createDefaultConfig('autostop-server');
+      config.enableAutoStop = true;
+      config.restartPolicy = 'always';
+
+      await service.generateDockerComposeFile(config, false);
+
+      const writeFileMock = fs.writeFile as unknown as jest.Mock;
+      const [, yamlContent] = writeFileMock.mock.calls[0];
+      const parsed = yaml.load(yamlContent as string) as any;
+
+      expect(parsed.services.mc.restart).toBe('no');
+    });
   });
 });

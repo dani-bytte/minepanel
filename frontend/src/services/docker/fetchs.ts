@@ -162,7 +162,10 @@ export const getAllServersResources = async (): Promise<Record<string, ServerRes
   return response.data;
 };
 
-export const executeServerCommand = async (serverId: string, body: { command: string; rconPort: string; rconPassword: string }): Promise<{ success: boolean; output: string }> => {
+export const executeServerCommand = async (
+  serverId: string,
+  body: { command: string; rconPort: string; rconPassword?: string },
+): Promise<{ success: boolean; output: string }> => {
   const response = await api.post(`/servers/${serverId}/command`, body);
   return response.data;
 };
