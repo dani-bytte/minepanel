@@ -9,13 +9,13 @@ WORKDIR /app
 # Install dependencies
 COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm config set fetch-retries 5 && \
-    npm config set fetch-retry-factor 2 && \
-    npm config set fetch-retry-mintimeout 20000 && \
-    npm config set fetch-retry-maxtimeout 120000 && \
-    npm config set network-timeout 300000 && \
+    npm config set fetch-retries 5 || true && \
+    npm config set fetch-retry-factor 2 || true && \
+    npm config set fetch-retry-mintimeout 20000 || true && \
+    npm config set fetch-retry-maxtimeout 120000 || true && \
+    npm config set fetch-timeout 300000 || true && \
     for attempt in 1 2 3; do \
-      npm ci --no-audit --fund=false && break; \
+      npm ci --no-audit --fund=false --prefer-offline --progress=false && break; \
       if [ "$attempt" -eq 3 ]; then \
         echo "npm ci failed after $attempt attempts"; \
         exit 1; \
