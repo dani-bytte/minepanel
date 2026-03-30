@@ -32,8 +32,23 @@ export function useServerStatus(serverId: string) {
 
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 10000);
-    return () => clearInterval(interval);
+    const runFetch = () => {
+      if (typeof document === "undefined" || document.visibilityState === "visible") {
+        void fetchStatus();
+      }
+    };
+
+    const interval = setInterval(runFetch, 10000);
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", runFetch);
+    }
+
+    return () => {
+      clearInterval(interval);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", runFetch);
+      }
+    };
   }, [fetchStatus]);
 
   const startServer = async () => {

@@ -36,7 +36,7 @@ export function ServerLoadingSkeleton() {
         <div className="flex flex-col items-center justify-center py-20 px-6 space-y-6">
           <div className="relative h-20 w-20">
             <div className="animate-spin-slow">
-              <Image src="/images/loading-cube.webp" alt="Loading" width={80} height={80} className="object-contain drop-shadow-lg" />
+              <Image src="/images/loading-cube.webp" alt="Loading" width={80} height={80} className="object-contain drop-shadow-lg" style={{ height: 'auto' }} />
             </div>
           </div>
 

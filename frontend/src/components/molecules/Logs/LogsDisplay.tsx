@@ -47,7 +47,7 @@ export const LogsDisplay: FC<LogsDisplayProps> = ({ logsContainerRef, filteredLo
               <div className="flex flex-col items-center gap-3">
                 <RefreshCcw className="h-5 w-5 animate-spin text-gray-400" />
                 <span className="text-gray-400 font-minecraft text-sm">{t("loadingLogs")}</span>
-                <Image src="/images/loading-cube.webp" alt="Loading" width={32} height={32} className="animate-pulse" />
+                <Image src="/images/loading-cube.webp" alt="Loading" width={32} height={32} className="animate-pulse" style={{ height: 'auto' }} />
               </div>
             </div>
           ) : error ? (

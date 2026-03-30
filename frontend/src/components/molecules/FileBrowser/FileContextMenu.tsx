@@ -4,6 +4,7 @@ import { FC, useEffect, useRef } from "react";
 import { FileItem } from "@/services/files/files.service";
 import { useLanguage } from "@/lib/hooks/useLanguage";
 import { Download, Pencil, Trash2, FolderOpen, Copy, FileText, Archive } from "lucide-react";
+import { isEditableFile } from "@/lib/utils/file-utils";
 
 interface FileContextMenuProps {
   file: FileItem;
@@ -17,12 +18,6 @@ interface FileContextMenuProps {
   onOpen: (file: FileItem) => void;
   onCopyPath: (file: FileItem) => void;
 }
-
-const isEditableFile = (file: FileItem): boolean => {
-  if (file.isDirectory) return false;
-  const textExtensions = ["txt", "json", "yml", "yaml", "properties", "cfg", "conf", "xml", "md", "log", "sh", "bat", "toml", "ini", "mcmeta", "lang"];
-  return file.extension ? textExtensions.includes(file.extension.toLowerCase()) : false;
-};
 
 export const FileContextMenu: FC<FileContextMenuProps> = ({
   file,

@@ -15,7 +15,7 @@ interface LogEntry {
   level: "info" | "warn" | "error" | "debug";
 }
 
-export function useServerLogs(serverId: string) {
+export function useServerLogs(serverId: string, enabled: boolean = true) {
   const { t } = useLanguage();
   const [logs, setLogs] = useState<string>("");
   const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
@@ -100,13 +100,13 @@ export function useServerLogs(serverId: string) {
               setLogs((prevLogs) => {
                 const combined = prevLogs ? `${prevLogs}\n${data.logs}` : data.logs;
                 const allLines = combined.split("\n");
-                return allLines.slice(-2000).join("\n");
+                return allLines.slice(-600).join("\n");
               });
 
               setLogEntries((prevEntries) => {
                 const newEntries = parseLogsToEntries(data.logs, prevEntries);
                 const combined = [...prevEntries, ...newEntries];
-                return combined.slice(-2000);
+                return combined.slice(-600);
               });
             }
           }
@@ -206,6 +206,11 @@ export function useServerLogs(serverId: string) {
   };
 
   useEffect(() => {
+    if (!enabled) {
+      stopRealTimeUpdates();
+      return;
+    }
+
     if (isRealTime) {
       startRealTimeUpdates();
     } else {
@@ -215,7 +220,7 @@ export function useServerLogs(serverId: string) {
     return () => {
       stopRealTimeUpdates();
     };
-  }, [isRealTime, startRealTimeUpdates, stopRealTimeUpdates]);
+  }, [enabled, isRealTime, startRealTimeUpdates, stopRealTimeUpdates]);
 
   const setLogLines = (lines: number) => {
     setLineCount(lines);

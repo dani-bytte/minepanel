@@ -12,7 +12,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { FolderPlus, Upload, RefreshCw, Trash2, Download, Pencil, Loader2 } from "lucide-react";
+import { FolderPlus, Upload, RefreshCw, Trash2, Download, Pencil, Loader2, FileText } from "lucide-react";
+import { isEditableFile } from "@/lib/utils/file-utils";
 
 interface FileToolbarProps {
   onCreateFolder: (name: string) => void;
@@ -22,6 +23,7 @@ interface FileToolbarProps {
   onDelete: (file: FileItem) => void;
   onRename: (file: FileItem, newName: string) => void;
   onDownload: (file: FileItem) => void;
+  onEdit?: (file: FileItem) => void;
   isUploading?: boolean;
 }
 
@@ -33,6 +35,7 @@ export const FileToolbar: FC<FileToolbarProps> = ({
   onDelete,
   onRename,
   onDownload,
+  onEdit,
   isUploading = false,
 }) => {
   const { t } = useLanguage();
@@ -147,6 +150,18 @@ export const FileToolbar: FC<FileToolbarProps> = ({
 
         {selectedFile && (
           <>
+            {onEdit && isEditableFile(selectedFile) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-900/20"
+                onClick={() => onEdit(selectedFile)}
+              >
+                <FileText className="h-4 w-4" />
+                {t("edit")}
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="sm"

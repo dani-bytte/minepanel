@@ -111,7 +111,7 @@ export default function Home() {
             }}
             className="absolute top-20 left-10 opacity-20"
           >
-            <Image src="/images/grass.webp" alt="" width={60} height={60} />
+            <Image src="/images/grass.webp" alt="" width={60} height={60} priority />
           </m.div>
           <m.div
             animate={{
@@ -391,6 +391,7 @@ export default function Home() {
                   width={24}
                   height={48}
                   className="drop-shadow-lg"
+                  style={{ height: 'auto' }}
                 />
               </m.div>
             </div>

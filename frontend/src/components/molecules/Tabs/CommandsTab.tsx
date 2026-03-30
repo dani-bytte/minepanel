@@ -16,9 +16,10 @@ interface CommandsTabProps {
   serverStatus: string;
   rconPort: string;
   rconPassword: string;
+  isActive?: boolean;
 }
 
-export const CommandsTab: FC<CommandsTabProps> = ({ serverId, serverStatus, rconPort, rconPassword }) => {
+export const CommandsTab: FC<CommandsTabProps> = ({ serverId, serverStatus, rconPort, rconPassword, isActive = true }) => {
   const { t } = useLanguage();
   const { command, response, executing, executeCommand, setCommand, clearResponse } = useServerCommands(serverId, rconPort, rconPassword);
 
@@ -56,10 +57,10 @@ export const CommandsTab: FC<CommandsTabProps> = ({ serverId, serverStatus, rcon
   }, [serverId, rconPort, rconPassword, isServerRunning]);
 
   useEffect(() => {
-    if (isServerRunning && activeSection === "players") {
+    if (isActive && isServerRunning && activeSection === "players") {
       fetchPlayerData();
     }
-  }, [isServerRunning, activeSection, fetchPlayerData]);
+  }, [isActive, isServerRunning, activeSection, fetchPlayerData]);
 
   // Helper para ejecutar comandos RCON y refrescar data
   const runCommand = async (cmd: string, successMsg: string) => {

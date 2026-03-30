@@ -11,56 +11,11 @@ import { FileEditor } from "./FileEditor";
 import { DropZone } from "./DropZone";
 import { UploadProgress, UploadItem } from "./UploadProgress";
 import { Loader2 } from "lucide-react";
+import { isEditableFile } from "@/lib/utils/file-utils";
 
 interface FileBrowserProps {
   serverId: string;
 }
-
-// Extensiones que se pueden editar como texto
-const TEXT_EXTENSIONS = [
-  // Config
-  "txt",
-  "json",
-  "yml",
-  "yaml",
-  "properties",
-  "cfg",
-  "conf",
-  "xml",
-  "toml",
-  "ini",
-  // Scripts
-  "sh",
-  "bat",
-  "ps1",
-  "cmd",
-  // Docs
-  "md",
-  "log",
-  "csv",
-  // Minecraft
-  "mcmeta",
-  "lang",
-  "nbt",
-  // Code
-  "java",
-  "js",
-  "ts",
-  "py",
-  "lua",
-  "sk",
-  // Data
-  "html",
-  "css",
-  "scss",
-  "sql",
-];
-
-const isEditableFile = (file: FileItem): boolean => {
-  if (file.isDirectory) return false;
-  if (!file.extension) return false;
-  return TEXT_EXTENSIONS.includes(file.extension.toLowerCase());
-};
 
 export const FileBrowser: FC<FileBrowserProps> = ({ serverId }) => {
   const { t } = useLanguage();
@@ -369,7 +324,7 @@ export const FileBrowser: FC<FileBrowserProps> = ({ serverId }) => {
   return (
     <DropZone onFilesDropped={handleUploadFiles} className="h-[600px]">
       <div className="relative flex flex-col h-full bg-gray-900/60 border border-gray-700/50 rounded-lg overflow-hidden">
-        <FileToolbar onCreateFolder={handleCreateFolder} onUploadFiles={handleUploadFiles} onRefresh={() => loadFiles(currentPath)} selectedFile={selectedFile} onDelete={handleDelete} onRename={handleRename} onDownload={handleDownload} isUploading={isUploading} />
+        <FileToolbar onCreateFolder={handleCreateFolder} onUploadFiles={handleUploadFiles} onRefresh={() => loadFiles(currentPath)} selectedFile={selectedFile} onDelete={handleDelete} onRename={handleRename} onDownload={handleDownload} onEdit={handleEdit} isUploading={isUploading} />
 
         <Breadcrumbs path={currentPath} onNavigate={navigateToFolder} onNavigateUp={navigateUp} />
 

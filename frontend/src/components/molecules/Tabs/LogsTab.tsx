@@ -39,11 +39,12 @@ interface LogsTabProps {
   rconPort?: string;
   rconPassword?: string;
   serverStatus?: string;
+  isActive?: boolean;
 }
 
-export function LogsTab({ serverId, rconPort, rconPassword, serverStatus }: Readonly<LogsTabProps>) {
+export function LogsTab({ serverId, rconPort, rconPassword, serverStatus, isActive = true }: Readonly<LogsTabProps>) {
   const { t } = useLanguage();
-  const { logs, logEntries, filteredLogEntries, loading, lineCount, error, hasErrors, lastUpdate, isRealTime, searchTerm, levelFilter, fetchLogs, setLogLines, clearError, toggleRealTime, setSearchTerm, setLevelFilter } = useServerLogs(serverId);
+  const { logs, logEntries, filteredLogEntries, loading, lineCount, error, hasErrors, lastUpdate, isRealTime, searchTerm, levelFilter, fetchLogs, setLogLines, clearError, toggleRealTime, setSearchTerm, setLevelFilter } = useServerLogs(serverId, isActive);
 
   const logsContainerRef = useRef<HTMLPreElement>(null!);
   const [resources, setResources] = useState<ResourcesData | null>(null);
@@ -54,10 +55,11 @@ export function LogsTab({ serverId, rconPort, rconPassword, serverStatus }: Read
   const manualScrollControlRef = useRef(false);
 
   useEffect(() => {
+    if (!isActive) return;
     fetchLogs();
     fetchServerResources();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isActive]);
 
   const isNearBottom = (container: HTMLElement, threshold = 100) => {
     const { scrollTop, scrollHeight, clientHeight } = container;

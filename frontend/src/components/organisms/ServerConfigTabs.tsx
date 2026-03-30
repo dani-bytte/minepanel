@@ -6,16 +6,29 @@ import { SaveModeControl } from "../molecules/SaveModeControl";
 import { Settings, Server, Cpu, Package, Terminal, ScrollText, Code, Layers, FolderOpen, Smartphone } from "lucide-react";
 import { useLanguage } from "@/lib/hooks/useLanguage";
 
-const LogsTab = dynamic(() => import("../molecules/Tabs/LogsTab").then(mod => mod.LogsTab));
-const CommandsTab = dynamic(() => import("../molecules/Tabs/CommandsTab").then(mod => mod.CommandsTab));
-const AdvancedTab = dynamic(() => import("../molecules/Tabs/AdvancedTab").then(mod => mod.AdvancedTab));
-const ModsTab = dynamic(() => import("../molecules/Tabs/ModsTab").then(mod => mod.ModsTab));
-const PluginsTab = dynamic(() => import("../molecules/Tabs/PluginsTab").then(mod => mod.PluginsTab));
-const ResourcesTab = dynamic(() => import("../molecules/Tabs/ResourcesTab").then(mod => mod.ResourcesTab));
-const GeneralSettingsTab = dynamic(() => import("../molecules/Tabs/GeneralSettingsTab").then(mod => mod.GeneralSettingsTab));
-const ServerTypeTab = dynamic(() => import("../molecules/Tabs/ServerTypeTab").then(mod => mod.ServerTypeTab));
-const BedrockSettingsTab = dynamic(() => import("../molecules/Tabs/BedrockSettingsTab").then(mod => mod.BedrockSettingsTab));
-const FilesTab = dynamic(() => import("../molecules/Tabs/FilesTab").then(mod => mod.FilesTab));
+const loadLogsTab = () => import("../molecules/Tabs/LogsTab").then((mod) => mod.LogsTab);
+const loadCommandsTab = () => import("../molecules/Tabs/CommandsTab").then((mod) => mod.CommandsTab);
+const loadAdvancedTab = () => import("../molecules/Tabs/AdvancedTab").then((mod) => mod.AdvancedTab);
+const loadModsTab = () => import("../molecules/Tabs/ModsTab").then((mod) => mod.ModsTab);
+const loadPluginsTab = () => import("../molecules/Tabs/PluginsTab").then((mod) => mod.PluginsTab);
+const loadResourcesTab = () => import("../molecules/Tabs/ResourcesTab").then((mod) => mod.ResourcesTab);
+const loadGeneralSettingsTab = () => import("../molecules/Tabs/GeneralSettingsTab").then((mod) => mod.GeneralSettingsTab);
+const loadServerTypeTab = () => import("../molecules/Tabs/ServerTypeTab").then((mod) => mod.ServerTypeTab);
+const loadBedrockSettingsTab = () => import("../molecules/Tabs/BedrockSettingsTab").then((mod) => mod.BedrockSettingsTab);
+const loadFilesTab = () => import("../molecules/Tabs/FilesTab").then((mod) => mod.FilesTab);
+
+const TabLoader = () => <div className="py-10 text-center text-sm text-gray-400 font-minecraft">Loading...</div>;
+
+const LogsTab = dynamic(loadLogsTab, { loading: TabLoader });
+const CommandsTab = dynamic(loadCommandsTab, { loading: TabLoader });
+const AdvancedTab = dynamic(loadAdvancedTab, { loading: TabLoader });
+const ModsTab = dynamic(loadModsTab, { loading: TabLoader });
+const PluginsTab = dynamic(loadPluginsTab, { loading: TabLoader });
+const ResourcesTab = dynamic(loadResourcesTab, { loading: TabLoader });
+const GeneralSettingsTab = dynamic(loadGeneralSettingsTab, { loading: TabLoader });
+const ServerTypeTab = dynamic(loadServerTypeTab, { loading: TabLoader });
+const BedrockSettingsTab = dynamic(loadBedrockSettingsTab, { loading: TabLoader });
+const FilesTab = dynamic(loadFilesTab, { loading: TabLoader });
 
 interface ServerConfigTabsProps {
   readonly serverId: string;
@@ -68,9 +81,36 @@ export const ServerConfigTabs: FC<ServerConfigTabsProps> = ({ serverId, config, 
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.location.hash = activeTab;
+      const currentHash = window.location.hash.slice(1);
+      if (currentHash !== activeTab) {
+        window.history.replaceState(null, "", `#${activeTab}`);
+      }
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const preloadTabs = () => {
+      void loadLogsTab();
+      void loadCommandsTab();
+      void loadAdvancedTab();
+      void loadResourcesTab();
+      void loadGeneralSettingsTab();
+      void loadServerTypeTab();
+      void loadBedrockSettingsTab();
+      void loadFilesTab();
+      if (showModsTab) {
+        void loadModsTab();
+      }
+      if (showPluginsTab) {
+        void loadPluginsTab();
+      }
+    };
+
+    const timeout = window.setTimeout(preloadTabs, 1200);
+    return () => window.clearTimeout(timeout);
+  }, [showModsTab, showPluginsTab]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -203,53 +243,53 @@ export const ServerConfigTabs: FC<ServerConfigTabsProps> = ({ serverId, config, 
 
             <div className="p-4 bg-gray-900/60 min-h-[400px]">
               <TabsContent value="type" className="space-y-4 mt-0">
-                <ServerTypeTab config={config} updateConfig={updateConfig} />
+                {activeTab === "type" && <ServerTypeTab config={config} updateConfig={updateConfig} />}
               </TabsContent>
 
               <TabsContent value="general" className="space-y-4 mt-0">
-                <GeneralSettingsTab config={config} updateConfig={updateConfig} />
+                {activeTab === "general" && <GeneralSettingsTab config={config} updateConfig={updateConfig} />}
               </TabsContent>
 
               {showResourcesTab && (
                 <TabsContent value="resources" className="space-y-4 mt-0">
-                  <ResourcesTab config={config} updateConfig={updateConfig} />
+                  {activeTab === "resources" && <ResourcesTab config={config} updateConfig={updateConfig} />}
                 </TabsContent>
               )}
 
               {isBedrock && (
                 <TabsContent value="bedrock" className="space-y-4 mt-0">
-                  <BedrockSettingsTab config={config} updateConfig={updateConfig} />
+                  {activeTab === "bedrock" && <BedrockSettingsTab config={config} updateConfig={updateConfig} />}
                 </TabsContent>
               )}
 
               {showModsTab && (
                 <TabsContent value="mods" className="space-y-4 mt-0">
-                  <ModsTab config={config} updateConfig={updateConfig} />
+                  {activeTab === "mods" && <ModsTab config={config} updateConfig={updateConfig} />}
                 </TabsContent>
               )}
 
               {showPluginsTab && (
                 <TabsContent value="plugins" className="space-y-4 mt-0">
-                  <PluginsTab config={config} updateConfig={updateConfig} />
+                  {activeTab === "plugins" && <PluginsTab config={config} updateConfig={updateConfig} />}
                 </TabsContent>
               )}
 
               <TabsContent value="advanced" className="space-y-4 mt-0">
-                <AdvancedTab config={config} updateConfig={updateConfig} />
+                {activeTab === "advanced" && <AdvancedTab config={config} updateConfig={updateConfig} />}
               </TabsContent>
 
               <TabsContent value="logs" className="space-y-4 mt-0">
-                <LogsTab serverId={serverId} rconPort={config.rconPort} rconPassword={config.rconPassword} serverStatus={serverStatus} />
+                {activeTab === "logs" && <LogsTab serverId={serverId} rconPort={config.rconPort} rconPassword={config.rconPassword} serverStatus={serverStatus} isActive={activeTab === "logs"} />}
               </TabsContent>
 
               {showCommandsTab && (
                 <TabsContent value="commands" className="space-y-4 mt-0">
-                  <CommandsTab serverId={serverId} serverStatus={serverStatus} rconPort={config.rconPort} rconPassword={config.rconPassword} />
+                  {activeTab === "commands" && <CommandsTab serverId={serverId} serverStatus={serverStatus} rconPort={config.rconPort} rconPassword={config.rconPassword} isActive={activeTab === "commands"} />}
                 </TabsContent>
               )}
 
               <TabsContent value="files" className="space-y-4 mt-0">
-                <FilesTab serverId={serverId} />
+                {activeTab === "files" && <FilesTab serverId={serverId} />}
               </TabsContent>
             </div>
           </Tabs>

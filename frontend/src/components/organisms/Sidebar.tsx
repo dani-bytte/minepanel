@@ -82,9 +82,20 @@ export function Sidebar() {
       fetchServers();
     }
 
+    const runStatusUpdate = () => {
+      if (document.visibilityState === "visible") {
+        void updateStatuses();
+      }
+    };
+
     // Update statuses every 10 seconds
-    const interval = setInterval(updateStatuses, 10000);
-    return () => clearInterval(interval);
+    const interval = setInterval(runStatusUpdate, 10000);
+    document.addEventListener("visibilitychange", runStatusUpdate);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", runStatusUpdate);
+    };
   }, [isHydrated, servers.length, fetchServers, updateStatuses]);
 
   const navigationItems = [

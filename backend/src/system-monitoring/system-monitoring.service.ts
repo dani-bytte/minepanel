@@ -172,16 +172,13 @@ export class SystemMonitoringService {
     free: number;
   }> {
     try {
-      const { stdout } = await execAsync('wmic logicaldisk where "DeviceID=\'C:\'" get Size,FreeSpace /value');
+      // Usar PowerShell em vez de wmic (wmic foi depreciado no Windows 11)
+      const { stdout } = await execAsync(
+        'powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk -Filter \\"DeviceID=\'C:\'\\" | Select-Object Size, FreeSpace | ConvertTo-Json"'
+      );
 
-      const lines = stdout.split('\n').filter((line) => line.includes('='));
-      const stats: any = {};
-
-      for (const line of lines) {
-        const [key, value] = line.split('=');
-        stats[key.trim()] = Number.parseInt(value.trim());
-      }
-
+      const stats = JSON.parse(stdout.trim());
+      
       const total = stats.Size || 0;
       const free = stats.FreeSpace || 0;
       const used = total - free;

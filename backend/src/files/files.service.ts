@@ -18,7 +18,7 @@ export class FilesService {
   private readonly SERVERS_DIR: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.SERVERS_DIR = this.configService.get('serversDir');
+    this.SERVERS_DIR = path.resolve(this.configService.get('serversDir'));
   }
 
   private getBasePath(serverId: string): string {
@@ -30,16 +30,16 @@ export class FilesService {
   }
 
   private validatePath(serverId: string, filePath: string): string {
-    const basePath = this.getBasePath(serverId);
-    const fullPath = path.join(basePath, filePath || '');
-    const normalized = path.normalize(fullPath);
+    const basePath = path.resolve(this.getBasePath(serverId));
+    const resolvedPath = path.resolve(basePath, filePath || '');
+    const relativePath = path.relative(basePath, resolvedPath);
 
     // Prevent path traversal attacks
-    if (!normalized.startsWith(basePath)) {
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
       throw new BadRequestException('Invalid path');
     }
 
-    return normalized;
+    return resolvedPath;
   }
 
   async listFiles(serverId: string, dirPath: string = ''): Promise<FileItem[]> {
