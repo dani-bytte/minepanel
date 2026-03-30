@@ -285,8 +285,7 @@ export const FileBrowser: FC<FileBrowserProps> = ({ serverId }) => {
 
   const handleDownload = useCallback(
     (file: FileItem) => {
-      const token = localStorage.getItem("token");
-      const url = `${filesService.getDownloadUrl(serverId, file.path)}&token=${encodeURIComponent(token || "")}`;
+      const url = filesService.getDownloadUrl(serverId, file.path);
 
       const a = document.createElement("a");
       a.href = url;
@@ -302,8 +301,7 @@ export const FileBrowser: FC<FileBrowserProps> = ({ serverId }) => {
     (file: FileItem) => {
       if (!file.isDirectory) return;
 
-      const token = localStorage.getItem("token");
-      const url = `${filesService.getDownloadZipUrl(serverId, file.path)}&token=${encodeURIComponent(token || "")}`;
+      const url = filesService.getDownloadZipUrl(serverId, file.path);
 
       mcToast.success(t("zipDownloaded"));
 

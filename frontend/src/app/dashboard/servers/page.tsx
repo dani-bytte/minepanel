@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,36 +41,13 @@ export default function Dashboard() {
   const [createMode, setCreateMode] = useState<"quick" | "template">("quick");
   const [selectedTemplate, setSelectedTemplate] = useState<ServerTemplate | null>(null);
   const [selectedEdition, setSelectedEdition] = useState<ServerEdition>("JAVA");
+  const serversRef = useRef<ServerInfo[]>([]);
 
   const form = useForm<{ id: string }>({
     defaultValues: {
       id: "",
     },
   });
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializeDashboard = async () => {
-      if (isMounted) {
-        await fetchServersFromBackend();
-      }
-    };
-
-    initializeDashboard();
-
-    const interval = setInterval(() => {
-      if (isMounted) {
-        loadServerInfo();
-      }
-    }, 30000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const processServerStatuses = useCallback(
     async (serversList: ServerInfo[]): Promise<ServerInfo[]> => {
@@ -142,15 +119,42 @@ export default function Dashboard() {
   };
 
   const loadServerInfo = useCallback(async () => {
-    if (servers.length === 0) return;
+    if (serversRef.current.length === 0) return;
     try {
-      const updatedServers = await processServerStatuses(servers);
+      const updatedServers = await processServerStatuses(serversRef.current);
       setServers(updatedServers);
     } catch (error) {
       console.error("Error loading server information:", error);
       mcToast.error(t("errorLoadingServerInfo"));
     }
-  }, [servers, t, processServerStatuses]);
+  }, [t, processServerStatuses]);
+
+  useEffect(() => {
+    serversRef.current = servers;
+  }, [servers]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeDashboard = async () => {
+      if (isMounted) {
+        await fetchServersFromBackend();
+      }
+    };
+
+    initializeDashboard();
+
+    const interval = setInterval(() => {
+      if (isMounted) {
+        loadServerInfo();
+      }
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [fetchServersFromBackend, loadServerInfo]);
 
   const handleCreateServer = async (values: { id: string }) => {
     setIsCreatingServer(true);
@@ -262,7 +266,7 @@ export default function Dashboard() {
                     <p className="text-sm text-gray-400 mb-2">{t("selectTemplate")}</p>
                     <div className="grid grid-cols-2 gap-2">
                       {serverTemplates.map((template) => (
-                        <button key={template.id} type="button" onClick={() => setSelectedTemplate(template)} className={`p-3 rounded-lg border text-left transition-all ${selectedTemplate?.id === template.id ? "border-emerald-500 bg-emerald-900/30" : "border-gray-700 bg-gray-800/50 hover:border-gray-600"}`}>
+                        <button key={template.id} type="button" onClick={() => setSelectedTemplate(template)} className={`p-3 rounded-lg border text-left transition-colors motion-reduce:transition-none ${selectedTemplate?.id === template.id ? "border-emerald-500 bg-emerald-900/30" : "border-gray-700 bg-gray-800/50 hover:border-gray-600"}`}>
                           <div className="flex items-start gap-2">
                             <Image src={`/images/${template.icon}.webp`} alt={template.name} width={24} height={24} className="mt-0.5" />
                             <div className="flex-1 min-w-0">
@@ -296,7 +300,7 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setSelectedEdition("JAVA")}
-                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors motion-reduce:transition-none ${
                         selectedEdition === "JAVA"
                           ? "border-emerald-500 bg-emerald-900/30"
                           : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
@@ -312,7 +316,7 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setSelectedEdition("BEDROCK")}
-                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors motion-reduce:transition-none ${
                         selectedEdition === "BEDROCK"
                           ? "border-emerald-500 bg-emerald-900/30"
                           : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
@@ -375,7 +379,7 @@ export default function Dashboard() {
 
       <div>
         {servers.length === 0 && !isLoading ? (
-          <div className="text-center py-16 animate-fade-in">
+            <div className="text-center py-16 animate-fade-in motion-reduce:animate-none">
             <Image src="/images/chest.webp" alt="Empty chest" width={80} height={80} className="mx-auto mb-6 opacity-60" />
             <h3 className="text-2xl font-minecraft text-gray-300 mb-4">{t("noServersAvailable")}</h3>
             <p className="text-gray-400 mb-8 text-lg">{t("noServersAvailableDesc")}</p>
@@ -388,7 +392,7 @@ export default function Dashboard() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {servers.map((server: ServerInfo, index: number) => (
               <div key={server.id} className={`animate-fade-in-up stagger-${Math.min(index + 1, 6)}`}>
-                <Card className="border-2 border-gray-700/60 bg-gray-900/80 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-emerald-600/30 group">
+                <Card className="border-2 border-gray-700/60 bg-gray-900/80 backdrop-blur-md shadow-xl hover:shadow-2xl transition-colors duration-300 hover:border-emerald-600/30 group motion-reduce:transition-none">
                   <div className={`h-2 ${getStatusColor(server.status)}`}></div>
 
                   <CardHeader className="pb-3">
@@ -434,12 +438,12 @@ export default function Dashboard() {
                   </CardContent>
 
                   <CardFooter className="flex gap-2 pt-0">
-                    <Link href={`/dashboard/servers/${server.id}`} className="flex-1">
-                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700 font-minecraft text-white">
+                    <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-minecraft text-white flex-1">
+                      <Link href={`/dashboard/servers/${server.id}`} aria-label={t("configure")} title={t("configure")}>
                         <SettingsIcon className="h-4 w-4 mr-2" />
                         {t("configure")}
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -487,7 +491,7 @@ export default function Dashboard() {
       </div>
 
       {servers.length > 0 && (
-        <div className="flex justify-center gap-8 pt-8">
+          <div className="flex justify-center gap-8 pt-8 motion-reduce:animate-none">
           <div className="animate-float">
             <Image src="/images/anvil.webp" alt="Anvil" width={32} height={32} className="opacity-50 hover:opacity-80 transition-opacity" />
           </div>

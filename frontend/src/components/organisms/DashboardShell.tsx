@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/organisms/DashboardHeader";
 import { useLanguage } from "@/lib/hooks/useLanguage";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useUIStore } from "@/lib/store/ui-store";
+import { useReducedMotion } from "framer-motion";
 
 interface DashboardShellProps {
   readonly children: React.ReactNode;
@@ -17,6 +18,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const router = useRouter();
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
   const { isSidebarCollapsed, isHydrated, setHydrated } = useUIStore();
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     initialize();
@@ -50,11 +52,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
       <Sidebar />
 
-      <div className={`flex-1 flex flex-col relative z-10 transition-all duration-300 ${isSidebarCollapsed ? "ml-16" : "ml-64"}`}>
+      <div className={`flex-1 flex flex-col relative z-10 transition-[margin-left] duration-300 ${isSidebarCollapsed ? "ml-16" : "ml-64"}`}>
         <DashboardHeader />
 
         <main className="flex-1 p-6 overflow-auto">
-          <div className="max-w-7xl mx-auto animate-fade-in">
+          <div className={shouldReduceMotion ? "max-w-7xl mx-auto" : "max-w-7xl mx-auto animate-fade-in motion-reduce:animate-none"}>
             {children}
           </div>
         </main>

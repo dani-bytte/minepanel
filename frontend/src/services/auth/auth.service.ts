@@ -26,13 +26,7 @@ const isAuthEndpoint = (url?: string): boolean => {
 export const login = async (username: string, password: string) => {
   try {
     const response = await api.post(`/auth/login`, { username, password }, { withCredentials: true });
-
-    if (response.data.username) {
-      localStorage.setItem("username", response.data.username);
-      return { success: true, data: response.data };
-    }
-
-    return { success: false, error: "NO_USERNAME" };
+    return { success: true, data: response.data };
   } catch (error) {
     console.error("Error in login:", error);
     const err = error as { response?: { data?: { message?: string } } };
@@ -49,10 +43,21 @@ export const logout = async () => {
   } catch (error) {
     console.error("Error in logout:", error);
   } finally {
-    localStorage.removeItem("username");
     if (typeof window !== "undefined" && window.location.pathname !== "/") {
       window.location.href = "/";
     }
+  }
+};
+
+export const getCurrentUser = async (): Promise<{ userId: number; username: string; role: string } | null> => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const response = await api.get("/auth/me", { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    console.error("Error checking authentication:", error);
+    return null;
   }
 };
 
@@ -67,17 +72,7 @@ export const refreshToken = async (): Promise<boolean> => {
 };
 
 export const isAuthenticated = async (): Promise<boolean> => {
-  if (typeof window === "undefined") return false;
-
-  try {
-    // Try to fetch current user session (lightweight check)
-    const response = await api.get("/auth/me", { withCredentials: true });
-    return response.status === 200;
-  } catch (error) {
-    // If 401, token expired or invalid
-    console.error("Error checking authentication:", error);
-    return false;
-  }
+  return (await getCurrentUser()) !== null;
 };
 
 export const setupAxiosInterceptors = () => {

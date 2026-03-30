@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Globe } from "lucide-react";
 import { useLanguage } from "../../lib/hooks/useLanguage";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -7,6 +8,12 @@ import { Button } from "../ui/button";
 
 export function LanguageSwitcher() {
   const { language, setLanguage, t } = useLanguage();
+  const router = useRouter();
+
+  const handleLanguageChange = (lang: "es" | "en" | "nl" | "de") => {
+    setLanguage(lang);
+    router.refresh();
+  };
 
   return (
     <DropdownMenu>
@@ -17,16 +24,16 @@ export function LanguageSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-gray-900/95 border border-emerald-700/40 shadow-lg rounded-md">
-        <DropdownMenuItem onClick={() => setLanguage("es")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "es" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
+        <DropdownMenuItem onClick={() => handleLanguageChange("es")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "es" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
           <span>🇪🇸</span> {t("spanish")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("en")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "en" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
+        <DropdownMenuItem onClick={() => handleLanguageChange("en")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "en" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
           <span>🇺🇸</span> {t("english")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("nl")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "nl" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
+        <DropdownMenuItem onClick={() => handleLanguageChange("nl")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "nl" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
           <span>🇳🇱</span> {t("dutch")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setLanguage("de")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "de" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
+        <DropdownMenuItem onClick={() => handleLanguageChange("de")} className={`flex items-center gap-2 px-3 py-2 rounded font-minecraft text-sm transition-colors ${language === "de" ? "bg-emerald-700/80 text-white" : "hover:bg-emerald-800/60 hover:text-emerald-200 text-emerald-300"}`}>
           <span>🇩🇪</span> {t("german")}
         </DropdownMenuItem>
       </DropdownMenuContent>

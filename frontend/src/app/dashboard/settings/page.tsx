@@ -39,19 +39,21 @@ import {
   UserSettings,
   ProxySettings,
   NetworkSettings,
+  type UpdateUserSettings,
 } from '@/services/settings/settings.service';
 import { changePassword } from '@/services/users/users.service';
 import { mcToast } from '@/lib/utils/minecraft-toast';
 import { LanguageSelector } from '@/components/ui/language-selector';
 import { regenerateAllDockerCompose } from '@/services/network.service';
+import { useAuthStore } from '@/lib/store/auth-store';
 
 export default function SettingsPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const username = useAuthStore((state) => state.username);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [username, setUsername] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -86,13 +88,6 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    const storedUsername = localStorage.getItem('username');
-    if (storedUsername) {
-      setUsername(storedUsername);
-    }
-  }, []);
-
-  useEffect(() => {
     const loadSettings = async () => {
       setIsLoading(true);
       try {
@@ -123,12 +118,11 @@ export default function SettingsPage() {
   const onSubmit = async (data: UserSettings) => {
     setIsSaving(true);
     try {
-      // Only send fields that the DTO accepts
-      // If local storage doesn't exist, default it to english so the backend doesn't receive an undefined value and returns an error
-      const updateData = {
+      const backendLanguage: UpdateUserSettings['language'] = language === 'es' ? 'es' : 'en';
+      const updateData: UpdateUserSettings = {
         cfApiKey: data.cfApiKey,
         discordWebhook: data.discordWebhook,
-        language: (localStorage.getItem('language') as 'en' | 'es') || 'en',
+        language: backendLanguage,
         proxy: {
           proxyEnabled: proxySettings.enabled,
           proxyBaseDomain: proxyBaseDomain || undefined,

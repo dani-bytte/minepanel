@@ -161,7 +161,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between">
           <div
             className={cn(
-              'flex items-center gap-3 transition-all duration-200 overflow-hidden',
+              'flex items-center gap-3 transition-opacity duration-200 overflow-hidden',
               isCollapsed ? 'opacity-0 w-0' : 'opacity-100',
             )}
           >
@@ -181,6 +181,8 @@ export function Sidebar() {
             variant="ghost"
             size="sm"
             onClick={toggleSidebar}
+            aria-label={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
+            title={isCollapsed ? t('expandSidebar') : t('collapseSidebar')}
             className="p-2 hover:bg-gray-800/60 text-gray-400 hover:text-white shrink-0"
           >
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -199,26 +201,28 @@ export function Sidebar() {
         </p>
 
         {navigationItems.map((item) => (
-          <Link key={item.href} href={item.href}>
-            <Button
-              variant="ghost"
-              className={cn(
-                'w-full justify-start gap-3 h-10 px-3 hover:bg-gray-800/60 hover:text-white text-white transition-colors',
-                item.isActive && 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30',
-                isCollapsed && 'justify-center px-0',
-              )}
-            >
+          <Button
+            key={item.href}
+            asChild
+            variant="ghost"
+            className={cn(
+              'w-full justify-start gap-3 h-10 px-3 hover:bg-gray-800/60 hover:text-white text-white transition-colors',
+              item.isActive && 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30',
+              isCollapsed && 'justify-center px-0',
+            )}
+          >
+            <Link href={item.href} aria-label={item.label} title={item.label}>
               <item.icon size={18} className="text-gray-400 hover:text-white shrink-0" />
               <span
                 className={cn(
-                  'font-minecraft text-sm transition-all duration-200 overflow-hidden whitespace-nowrap',
+                  'font-minecraft text-sm transition-opacity duration-200 overflow-hidden whitespace-nowrap',
                   isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 block',
                 )}
               >
                 {item.label}
               </span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         ))}
       </div>
 
@@ -239,21 +243,19 @@ export function Sidebar() {
               size="sm"
               onClick={() => fetchServers()}
               disabled={isLoading}
+              aria-label={t('refreshServers')}
+              title={t('refreshServers')}
               className="p-1.5 hover:bg-gray-800/60 text-gray-400 hover:text-white"
             >
               {isLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
             </Button>
 
             {!isCollapsed && (
-              <Link href="/dashboard/servers">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-1.5 hover:bg-gray-800/60 text-emerald-400 hover:text-emerald-300"
-                >
+              <Button asChild variant="ghost" size="sm" className="p-1.5 hover:bg-gray-800/60 text-emerald-400 hover:text-emerald-300">
+                <Link href="/dashboard/servers" aria-label={t('createServer')} title={t('createServer')}>
                   <Plus size={14} />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
           </div>
         </div>
@@ -289,7 +291,7 @@ export function Sidebar() {
 
                   <div
                     className={cn(
-                      'flex-1 min-w-0 transition-all duration-200 overflow-hidden',
+                      'flex-1 min-w-0 transition-opacity duration-200 overflow-hidden',
                       isCollapsed ? 'opacity-0 w-0' : 'opacity-100',
                     )}
                   >

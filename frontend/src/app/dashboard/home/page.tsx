@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { useLanguage } from "@/lib/hooks/useLanguage";
 import { ServerQuickView } from "@/components/dashboard/ServerQuickView";
 import { SystemAlerts } from "@/components/dashboard/SystemAlerts";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 type ServerInfo = {
   id: string;
@@ -21,17 +22,29 @@ type ServerInfo = {
 
 export default function HomePage() {
   const { t } = useLanguage();
+  const username = useAuthStore((state) => state.username);
   const [servers, setServers] = useState<ServerInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState("");
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
+  const serversRef = useRef<ServerInfo[]>([]);
 
-  useEffect(() => {
-    const storedUsername = localStorage.getItem("username");
-    if (storedUsername) {
-      setUsername(storedUsername);
+  const updateServerStatuses = useCallback(async (serversList: ServerInfo[]) => {
+    try {
+      const statusData = await getAllServersStatus();
+      setServers(
+        serversList.map((server) => ({
+          ...server,
+          status: statusData[server.id] || "not_found",
+        }))
+      );
+    } catch (error) {
+      console.error("Error updating server statuses:", error);
     }
   }, []);
+
+  useEffect(() => {
+    serversRef.current = servers;
+  }, [servers]);
 
   useEffect(() => {
     let isMounted = true;
@@ -61,8 +74,8 @@ export default function HomePage() {
 
     const interval = setInterval(() => {
       if (isMounted) {
-        if (servers.length > 0) {
-          updateServerStatuses(servers);
+        if (serversRef.current.length > 0) {
+          updateServerStatuses(serversRef.current);
         }
         // Update system stats every 30 seconds
         getSystemStats()
@@ -77,22 +90,7 @@ export default function HomePage() {
       isMounted = false;
       clearInterval(interval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const updateServerStatuses = async (serversList: ServerInfo[]) => {
-    try {
-      const statusData = await getAllServersStatus();
-      setServers(
-        serversList.map((server) => ({
-          ...server,
-          status: statusData[server.id] || "not_found",
-        }))
-      );
-    } catch (error) {
-      console.error("Error updating server statuses:", error);
-    }
-  };
+  }, [updateServerStatuses]);
 
   const runningServers = servers.filter((s) => s.status === "running").length;
   const stoppedServers = servers.filter((s) => s.status === "stopped" || s.status === "not_found").length;
@@ -232,30 +230,30 @@ export default function HomePage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-2">
-              <Link href="/dashboard/servers">
-                <Button variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-emerald-600/10 border-emerald-600/30 hover:bg-emerald-600/20 hover:border-emerald-500 group">
+              <Button asChild variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-emerald-600/10 border-emerald-600/30 hover:bg-emerald-600/20 hover:border-emerald-500 group">
+                <Link href="/dashboard/servers" aria-label={t("createServer")} title={t("createServer")}>
                   <Plus className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs text-gray-300">{t("createServer")}</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/servers">
-                <Button variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-blue-600/10 border-blue-600/30 hover:bg-blue-600/20 hover:border-blue-500 group">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-blue-600/10 border-blue-600/30 hover:bg-blue-600/20 hover:border-blue-500 group">
+                <Link href="/dashboard/servers" aria-label={t("viewAllServers")} title={t("viewAllServers")}>
                   <Server className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs text-gray-300">{t("viewAllServers")}</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/files">
-                <Button variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-purple-600/10 border-purple-600/30 hover:bg-purple-600/20 hover:border-purple-500 group">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-purple-600/10 border-purple-600/30 hover:bg-purple-600/20 hover:border-purple-500 group">
+                <Link href="/dashboard/files" aria-label={t("files")} title={t("files")}>
                   <FolderOpen className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs text-gray-300">{t("files")}</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/settings">
-                <Button variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-gray-600/10 border-gray-600/30 hover:bg-gray-600/20 hover:border-gray-500 group">
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full h-auto py-3 flex flex-col gap-1 bg-gray-600/10 border-gray-600/30 hover:bg-gray-600/20 hover:border-gray-500 group">
+                <Link href="/dashboard/settings" aria-label={t("settings")} title={t("settings")}>
                   <Activity className="w-5 h-5 text-gray-400 group-hover:scale-110 transition-transform" />
                   <span className="text-xs text-gray-300">{t("settings")}</span>
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

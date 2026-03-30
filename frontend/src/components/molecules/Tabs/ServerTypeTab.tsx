@@ -101,7 +101,7 @@ export const ServerTypeTab: FC<ServerTypeTabProps> = ({ config, updateConfig }) 
             disabled={config.serverExists}
           >
             <div
-              className={`flex items-center space-x-3 rounded-md p-3 transition-all ${config.serverExists ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${edition === 'JAVA' ? 'bg-emerald-600/20 border border-emerald-600/50' : 'bg-gray-800/40 border border-gray-700/50 hover:bg-gray-800/60'}`}
+              className={`flex items-center space-x-3 rounded-md p-3 transition-colors ${config.serverExists ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${edition === 'JAVA' ? 'bg-emerald-600/20 border border-emerald-600/50' : 'bg-gray-800/40 border border-gray-700/50 hover:bg-gray-800/60'}`}
             >
               <RadioGroupItem value="JAVA" id="java-edition" className="border-emerald-600/50" disabled={config.serverExists} />
               <Label htmlFor="java-edition" className={`flex items-center gap-2 ${config.serverExists ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
@@ -113,7 +113,7 @@ export const ServerTypeTab: FC<ServerTypeTabProps> = ({ config, updateConfig }) 
               </Label>
             </div>
             <div
-              className={`flex items-center space-x-3 rounded-md p-3 transition-all ${config.serverExists ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${edition === 'BEDROCK' ? 'bg-emerald-600/20 border border-emerald-600/50' : 'bg-gray-800/40 border border-gray-700/50 hover:bg-gray-800/60'}`}
+              className={`flex items-center space-x-3 rounded-md p-3 transition-colors ${config.serverExists ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${edition === 'BEDROCK' ? 'bg-emerald-600/20 border border-emerald-600/50' : 'bg-gray-800/40 border border-gray-700/50 hover:bg-gray-800/60'}`}
             >
               <RadioGroupItem
                 value="BEDROCK"

@@ -115,6 +115,8 @@ export const FileToolbar: FC<FileToolbarProps> = ({
           className="gap-2 text-gray-300 hover:text-white hover:bg-gray-700/50"
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
+          aria-label={t("uploadFiles")}
+          title={t("uploadFiles")}
         >
           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           {isUploading ? t("uploading") : t("uploadFiles")}
@@ -126,6 +128,8 @@ export const FileToolbar: FC<FileToolbarProps> = ({
           className="gap-2 text-gray-300 hover:text-white hover:bg-gray-700/50"
           onClick={() => folderInputRef.current?.click()}
           disabled={isUploading}
+          aria-label={t("uploadFolder")}
+          title={t("uploadFolder")}
         >
           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
           {t("uploadFolder")}
@@ -201,6 +205,8 @@ export const FileToolbar: FC<FileToolbarProps> = ({
           size="icon"
           className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700/50"
           onClick={onRefresh}
+          aria-label={t("refresh")}
+          title={t("refresh")}
         >
           <RefreshCw className="h-4 w-4" />
         </Button>

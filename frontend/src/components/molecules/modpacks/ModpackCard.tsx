@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CurseForgeModpack, formatDownloadCount } from "@/services/curseforge/curseforge.service";
 import { useLanguage } from "@/lib/hooks/useLanguage";
 import { FC, memo } from "react";
+import { useReducedMotion } from "framer-motion";
 
 interface ModpackCardProps {
   readonly modpack: CurseForgeModpack;
@@ -16,6 +17,7 @@ interface ModpackCardProps {
 
 const ModpackCard: FC<ModpackCardProps> = ({ modpack, onSelect }) => {
   const { t } = useLanguage();
+  const shouldReduceMotion = useReducedMotion();
 
   const getLatestVersion = () => {
     return modpack.latestFiles?.[0]?.gameVersions?.[0] || "N/A";
@@ -27,8 +29,8 @@ const ModpackCard: FC<ModpackCardProps> = ({ modpack, onSelect }) => {
   };
 
   return (
-    <div className="h-full animate-fade-in-up transition-transform duration-200 hover:-translate-y-1">
-      <Card className="group relative h-full overflow-hidden border border-gray-700 bg-gray-900 transition-all hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/20">
+    <div className={shouldReduceMotion ? "h-full" : "h-full animate-fade-in-up motion-reduce:animate-none transition-transform duration-200 hover:-translate-y-1"}>
+      <Card className="group relative h-full overflow-hidden border border-gray-700 bg-gray-900 transition-colors hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/20">
         <div className="relative h-40 w-full overflow-hidden bg-gray-800">
           {modpack.logo?.url ? (
             <Image src={modpack.logo.url} alt={modpack.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" sizes="400px" />

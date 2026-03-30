@@ -107,7 +107,7 @@ export function ModpackBrowser({ open, onClose, onSelect }: ModpackBrowserProps)
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {modpacks.map((modpack) => (
-                <div key={modpack.id} onClick={() => handleSelect(modpack)} className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-all ${selectedId === modpack.id ? "border-emerald-500 bg-emerald-900/30" : "border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800"}`}>
+                <button key={modpack.id} type="button" onClick={() => handleSelect(modpack)} className={`flex w-full gap-3 p-3 rounded-lg border text-left cursor-pointer transition-colors ${selectedId === modpack.id ? "border-emerald-500 bg-emerald-900/30" : "border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800"}`}>
                   {modpack.logo && <Image src={modpack.logo.url} alt={modpack.name} width={48} height={48} className="rounded flex-shrink-0" />}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export function ModpackBrowser({ open, onClose, onSelect }: ModpackBrowserProps)
                       )}
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}

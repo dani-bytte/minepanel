@@ -168,7 +168,7 @@ export function ServerQuickView({ servers }: ServerQuickViewProps) {
           <div className="space-y-3">
             {serversData.map((server) => (
               <Link key={server.id} href={`/dashboard/servers/${server.id}`} className="block">
-                <div className="p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600/50 transition-all group">
+                <div className="p-3 rounded-lg bg-gray-800/50 hover:bg-gray-800 border border-gray-700/50 hover:border-gray-600/50 transition-colors group">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-white group-hover:text-emerald-400 transition-colors truncate max-w-[200px]">{server.name}</span>
@@ -188,7 +188,7 @@ export function ServerQuickView({ servers }: ServerQuickViewProps) {
                           <span className="ml-auto font-mono">{server.cpuPercent.toFixed(0)}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                          <div className={`h-full bg-linear-to-r ${getUsageColor(server.cpuPercent)} transition-all duration-500`} style={{ width: `${Math.min(server.cpuPercent, 100)}%` }} />
+                          <div className={`h-full bg-linear-to-r ${getUsageColor(server.cpuPercent)} transition-[width] duration-500`} style={{ width: `${Math.min(server.cpuPercent, 100)}%` }} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -198,7 +198,7 @@ export function ServerQuickView({ servers }: ServerQuickViewProps) {
                           <span className="ml-auto font-mono">{server.memoryPercent.toFixed(0)}%</span>
                         </div>
                         <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                          <div className={`h-full bg-linear-to-r ${getUsageColor(server.memoryPercent)} transition-all duration-500`} style={{ width: `${Math.min(server.memoryPercent, 100)}%` }} />
+                          <div className={`h-full bg-linear-to-r ${getUsageColor(server.memoryPercent)} transition-[width] duration-500`} style={{ width: `${Math.min(server.memoryPercent, 100)}%` }} />
                         </div>
                       </div>
                     </div>

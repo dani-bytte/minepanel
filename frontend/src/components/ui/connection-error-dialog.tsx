@@ -80,7 +80,7 @@ export function ConnectionErrorDialog({ isOpen, onRetry }: ConnectionErrorDialog
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="flex flex-col gap-6 py-4">
           <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -100,7 +100,7 @@ export function ConnectionErrorDialog({ isOpen, onRetry }: ConnectionErrorDialog
             <h4 className="text-sm font-semibold text-gray-200 mb-3 font-minecraft">
               {t('troubleshootingSteps')}
             </h4>
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {troubleshootingSteps.map((step, index) => (
                 <m.div
                   key={index}

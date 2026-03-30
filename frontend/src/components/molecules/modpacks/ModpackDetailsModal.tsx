@@ -163,6 +163,8 @@ export function ModpackDetailsModal({ modpack, open, onClose }: ModpackDetailsMo
                     variant="outline"
                     size="icon"
                     onClick={() => copyToClipboard(modpack.id.toString(), t("modpackId"))}
+                    aria-label={t("modpackId")}
+                    title={t("modpackId")}
                     className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/20"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -178,6 +180,8 @@ export function ModpackDetailsModal({ modpack, open, onClose }: ModpackDetailsMo
                     variant="outline"
                     size="icon"
                     onClick={() => copyToClipboard(modpack.slug, t("modpackSlug"))}
+                    aria-label={t("modpackSlug")}
+                    title={t("modpackSlug")}
                     className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/20"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -193,6 +197,8 @@ export function ModpackDetailsModal({ modpack, open, onClose }: ModpackDetailsMo
                     variant="outline"
                     size="icon"
                     onClick={() => copyToClipboard(modpack.links.websiteUrl, t("curseforgeUrl"))}
+                    aria-label={t("curseforgeUrl")}
+                    title={t("curseforgeUrl")}
                     className="border-emerald-600 text-emerald-400 hover:bg-emerald-600/20"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -206,6 +212,7 @@ export function ModpackDetailsModal({ modpack, open, onClose }: ModpackDetailsMo
           <div className="flex gap-3">
             <Button
               onClick={() => window.open(modpack.links.websiteUrl, "_blank")}
+              aria-label={t("viewOnCurseForge")}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-minecraft"
             >
               <ExternalLink className="w-4 h-4 mr-2" />

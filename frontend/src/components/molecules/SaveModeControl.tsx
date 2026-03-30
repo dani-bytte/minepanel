@@ -23,7 +23,7 @@ export const SaveModeControl: FC<SaveModeControlProps> = ({ onManualSave, isSavi
   return (
     <div className="flex items-center justify-between p-3 bg-gray-900/60 backdrop-blur-md rounded-lg border border-gray-700/50">
       {hasUnsavedChanges && !isSaving && (
-        <div className="flex items-center gap-2 text-amber-400 text-sm animate-fade-in">
+        <div className="flex items-center gap-2 text-amber-400 text-sm animate-fade-in motion-reduce:animate-none">
           <AlertCircle className="h-4 w-4 animate-pulse" />
           <span className="font-minecraft">{t("unsavedChanges")}</span>
         </div>
@@ -48,7 +48,7 @@ export const SaveModeControl: FC<SaveModeControlProps> = ({ onManualSave, isSavi
         onClick={handleManualSave}
         disabled={isSaving || !hasUnsavedChanges}
         size="sm"
-        className="bg-emerald-600 hover:bg-emerald-700 text-white font-minecraft gap-2 transition-all disabled:opacity-50"
+        className="bg-emerald-600 hover:bg-emerald-700 text-white font-minecraft gap-2 transition-colors disabled:opacity-50"
       >
         <Save className="h-4 w-4" />
         {t("saveChanges")}

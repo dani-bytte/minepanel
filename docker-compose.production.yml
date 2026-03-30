@@ -8,7 +8,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - FRONTEND_URL=${FRONTEND_URL}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-2d}
       - CLIENT_PASSWORD=${CLIENT_PASSWORD:-admin}
@@ -17,9 +17,9 @@ services:
       - BASE_DIR=${BASE_DIR}
       - COMPOSE_PROJECT=${COMPOSE_PROJECT:-}
     volumes:
-      - ../files/servers:/app/servers
-      - ../files/data:/app/data
+      - ${BASE_DIR:-$PWD}/servers:/app/servers
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${BASE_DIR:-$PWD}/data:/app/data
     healthcheck:
       test:
         [
@@ -45,10 +45,8 @@ services:
     env_file:
       - .env
     environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8091}
       - NEXT_PUBLIC_DEFAULT_LANGUAGE=${NEXT_PUBLIC_DEFAULT_LANGUAGE:-en}
-      - NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH:-}
     depends_on:
       backend:
         condition: service_healthy
@@ -66,6 +64,22 @@ services:
       start_period: 20s
     networks:
       - dokploy-network
+
+  mc-router:
+    image: itzg/mc-router:1.39.1
+    container_name: mc-router
+    profiles:
+      - proxy
+    ports:
+      - '${MC_PROXY_PORT:-25565}:25565'
+    environment:
+      - ROUTES_CONFIG=/data/routes.json
+      - ROUTES_CONFIG_WATCH=true
+    volumes:
+      - ${BASE_DIR:-$PWD}/data/proxy:/data
+    networks:
+      - dokploy-networks
+    restart: unless-stopped
 
 networks:
   dokploy-network:

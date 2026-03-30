@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Check, Globe } from 'lucide-react';
 import { useLanguage } from '../../lib/hooks/useLanguage';
 import {
@@ -20,7 +21,13 @@ const languages = [
 
 export function LanguageSelector() {
   const { language, setLanguage } = useLanguage();
+  const router = useRouter();
   const currentLanguage = languages.find((lang) => lang.code === language);
+
+  const handleLanguageChange = (lang: (typeof languages)[number]['code']) => {
+    setLanguage(lang);
+    router.refresh();
+  };
 
   return (
     <DropdownMenu>
@@ -40,7 +47,7 @@ export function LanguageSelector() {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => setLanguage(lang.code)}
+            onClick={() => handleLanguageChange(lang.code)}
             className={`flex items-center justify-between px-3 py-2.5 cursor-pointer font-minecraft text-sm transition-colors ${language === lang.code ? 'bg-purple-600/30 text-purple-300' : 'text-gray-300 hover:bg-gray-700/60 hover:text-white'}`}
           >
             <span className="flex items-center gap-3">

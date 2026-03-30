@@ -32,7 +32,7 @@ interface FormFieldProps {
  */
 export function FormField({ id, label, value, onChange, onBlur, type = "text", placeholder, description, tooltip, icon, iconAlt, className = "", inputClassName = "", disabled = false, required = false, min, max }: FormFieldProps) {
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`flex flex-col gap-2 ${className}`}>
       <div className="flex items-center justify-between">
         <Label htmlFor={id} className="text-gray-200 font-minecraft text-sm flex items-center gap-2">
           {icon && iconAlt && <Image src={icon} alt={iconAlt} width={16} height={16} />}
@@ -43,7 +43,7 @@ export function FormField({ id, label, value, onChange, onBlur, type = "text", p
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 p-0 bg-transparent hover:bg-gray-700/50" type="button">
+                <Button variant="ghost" size="icon" className="size-6 p-0 bg-transparent hover:bg-gray-700/50" type="button">
                   <HelpCircle className="h-4 w-4 text-gray-400" />
                 </Button>
               </TooltipTrigger>
@@ -72,7 +72,7 @@ interface FormSwitchFieldProps {
 
 export function FormSwitchField({ id, label, description, icon, iconAlt, className = "", children }: FormSwitchFieldProps) {
   return (
-    <div className={`p-4 rounded-md bg-gray-800/50 border border-gray-700/50 space-y-3 ${className}`}>
+    <div className={`p-4 rounded-md bg-gray-800/50 border border-gray-700/50 flex flex-col gap-3 ${className}`}>
       <div className="flex items-center justify-between">
         <Label htmlFor={id} className="text-gray-200 font-minecraft text-sm flex items-center gap-2">
           {icon && iconAlt && <Image src={icon} alt={iconAlt} width={16} height={16} />}

@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/card';
 import { isAuthenticated, login } from '@/services/auth/auth.service';
 import { healthService } from '@/services/health.service';
-import { m } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { useLanguage } from '@/lib/hooks/useLanguage';
 import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { ConnectionErrorDialog } from '@/components/ui/connection-error-dialog';
@@ -37,6 +37,7 @@ export default function Home() {
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const router = useRouter();
   const { t } = useLanguage();
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -99,12 +100,12 @@ export default function Home() {
 
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <m.div
-            animate={{
+            animate={shouldReduceMotion ? undefined : {
               y: [0, -20, 0],
               x: [0, 10, 0],
               rotate: [0, 5, 0],
             }}
-            transition={{
+            transition={shouldReduceMotion ? undefined : {
               duration: 8,
               repeat: Infinity,
               ease: 'easeInOut',
@@ -114,12 +115,12 @@ export default function Home() {
             <Image src="/images/grass.webp" alt="" width={60} height={60} priority />
           </m.div>
           <m.div
-            animate={{
+            animate={shouldReduceMotion ? undefined : {
               y: [0, 20, 0],
               x: [0, -15, 0],
               rotate: [0, -5, 0],
             }}
-            transition={{
+            transition={shouldReduceMotion ? undefined : {
               duration: 10,
               repeat: Infinity,
               ease: 'easeInOut',
@@ -130,11 +131,11 @@ export default function Home() {
             <Image src="/images/diamond.webp" alt="" width={50} height={50} />
           </m.div>
           <m.div
-            animate={{
+            animate={shouldReduceMotion ? undefined : {
               y: [0, -25, 0],
               x: [0, 12, 0],
             }}
-            transition={{
+            transition={shouldReduceMotion ? undefined : {
               duration: 9,
               repeat: Infinity,
               ease: 'easeInOut',
@@ -145,11 +146,11 @@ export default function Home() {
             <Image src="/images/grass.webp" alt="" width={45} height={45} />
           </m.div>
           <m.div
-            animate={{
+            animate={shouldReduceMotion ? undefined : {
               y: [0, 18, 0],
               rotate: [0, 10, 0],
             }}
-            transition={{
+            transition={shouldReduceMotion ? undefined : {
               duration: 7,
               repeat: Infinity,
               ease: 'easeInOut',
@@ -164,7 +165,7 @@ export default function Home() {
         <header className="relative z-10 border-b border-gray-700/60 bg-gray-900/95 backdrop-blur-md shadow-lg">
           <div className="flex h-16 items-center justify-between px-6 sm:px-8 max-w-7xl mx-auto">
             <Link href="/" className="flex items-center gap-3 font-bold group">
-              <m.div whileHover={{ rotate: 360 }} transition={{ duration: 0.6 }}>
+              <m.div whileHover={shouldReduceMotion ? undefined : { rotate: 360 }} transition={shouldReduceMotion ? undefined : { duration: 0.6 }}>
                 <Image
                   src="/images/minecraft-logo.webp"
                   alt="Minecraft Logo"
@@ -174,7 +175,7 @@ export default function Home() {
                   priority
                 />
               </m.div>
-              <span className="text-xl bg-linear-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent font-minecraft group-hover:from-emerald-400 group-hover:to-green-500 transition-all">
+              <span className="text-xl bg-linear-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent font-minecraft group-hover:from-emerald-400 group-hover:to-green-500 transition-colors">
                 Minepanel
               </span>
             </Link>
@@ -184,9 +185,9 @@ export default function Home() {
 
         <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
           <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={shouldReduceMotion ? undefined : { duration: 0.5 }}
             className="mx-auto max-w-md w-full"
           >
             <div className="space-y-4 text-center mb-8">
@@ -211,23 +212,23 @@ export default function Home() {
               </m.p>
             </div>
 
-            <m.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              className="relative"
-            >
+          <m.div
+            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, scale: 1 }}
+            transition={shouldReduceMotion ? undefined : { delay: 0.3, duration: 0.4 }}
+            className="relative"
+          >
               {/* Efecto de brillo animado detrás del card */}
-              <div className="absolute -inset-1 bg-linear-to-r from-emerald-600 via-green-500 to-emerald-600 rounded-lg opacity-30 blur-lg animate-pulse"></div>
+              <div className="absolute -inset-1 bg-linear-to-r from-emerald-600 via-green-500 to-emerald-600 rounded-lg opacity-30 blur-lg animate-pulse motion-reduce:animate-none"></div>
 
-              <Card className="relative border-2 border-emerald-600/30 bg-gray-900/95 backdrop-blur-md shadow-2xl shadow-emerald-900/20 hover:border-emerald-500/50 transition-all duration-300">
+              <Card className="relative border-2 border-emerald-600/30 bg-gray-900/95 backdrop-blur-md shadow-2xl shadow-emerald-900/20 hover:border-emerald-500/50 transition-colors duration-300">
                 <form onSubmit={handleSubmit}>
                   <CardHeader className="space-y-1 pb-4">
                     <CardTitle className="text-2xl font-minecraft text-white flex items-center gap-2">
                       {t('login')}
                       <m.div
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        animate={shouldReduceMotion ? undefined : { scale: [1, 1.2, 1] }}
+                        transition={shouldReduceMotion ? undefined : { duration: 2, repeat: Infinity }}
                         className="w-2 h-2 bg-emerald-500 rounded-full"
                       />
                     </CardTitle>
@@ -249,7 +250,7 @@ export default function Home() {
                             placeholder={t('username').toLowerCase()}
                             required
                             autoComplete="username"
-                            className="bg-gray-800/90 border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 pl-10 text-gray-100 transition-all"
+                            className="bg-gray-800/90 border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 pl-10 text-gray-100 transition-colors"
                           />
                           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
                             <svg
@@ -281,7 +282,7 @@ export default function Home() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             autoComplete="current-password"
-                            className="bg-gray-800/90 border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 pl-10 text-gray-100 transition-all"
+                            className="bg-gray-800/90 border-gray-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 pl-10 text-gray-100 transition-colors"
                           />
                           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none group-focus-within:text-emerald-500 transition-colors">
                             <svg
@@ -305,13 +306,13 @@ export default function Home() {
                   <CardFooter className="pb-4 pt-2 flex-col space-y-3">
                     <Button
                       type="submit"
-                      className="w-full font-minecraft bg-emerald-600 hover:bg-emerald-700 text-white py-2 transition-all hover:shadow-lg hover:shadow-emerald-600/50 hover:scale-[1.02] active:scale-[0.98]"
+                      className="w-full font-minecraft bg-emerald-600 hover:bg-emerald-700 text-white py-2 transition-colors hover:shadow-lg hover:shadow-emerald-600/50 hover:scale-[1.02] active:scale-[0.98]"
                       disabled={isLoading || !serverAvailable}
                     >
                       {(() => {
                         if (serverAvailable === null) {
                           return (
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-2 motion-reduce:animate-none">
                               <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin"></div>
                               <span>{t('checkingServerStatus')}</span>
                             </div>
@@ -319,7 +320,7 @@ export default function Home() {
                         }
                         if (isLoading) {
                           return (
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-2 motion-reduce:animate-none">
                               <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin"></div>
                               <span>{t('loading')}</span>
                             </div>
@@ -345,14 +346,15 @@ export default function Home() {
             </m.div>
 
             <div className="mt-10 flex justify-center items-center space-x-6">
-              <m.div
-                whileHover={{ scale: 1.2, rotate: 10 }}
-                whileTap={{ scale: 0.9 }}
-                animate={{ y: [0, -10, 0] }}
-                transition={{
-                  y: { duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.1 },
-                }}
-              >
+            <m.div
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.2, rotate: 10 }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+                  animate={shouldReduceMotion ? undefined : { y: [0, -10, 0] }}
+                  transition={shouldReduceMotion ? undefined : {
+                    y: { duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.1 },
+                  }}
+                  className="motion-reduce:animate-none"
+                >
                 <Image
                   src="/images/grass.webp"
                   alt="Grass Block"
@@ -361,11 +363,11 @@ export default function Home() {
                   className="drop-shadow-lg"
                 />
               </m.div>
-              <m.div
-                whileHover={{ scale: 1.2, rotate: -10 }}
-                whileTap={{ scale: 0.9 }}
-                animate={{ y: [0, -12, 0] }}
-                transition={{
+          <m.div
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.2, rotate: -10 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+                animate={shouldReduceMotion ? undefined : { y: [0, -12, 0] }}
+                transition={shouldReduceMotion ? undefined : {
                   y: { duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 0.3 },
                 }}
               >
@@ -377,11 +379,11 @@ export default function Home() {
                   className="drop-shadow-lg"
                 />
               </m.div>
-              <m.div
-                whileHover={{ scale: 1.2, rotate: 5 }}
-                whileTap={{ scale: 0.9 }}
-                animate={{ y: [0, -8, 0] }}
-                transition={{
+          <m.div
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.2, rotate: 5 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+                animate={shouldReduceMotion ? undefined : { y: [0, -8, 0] }}
+                transition={shouldReduceMotion ? undefined : {
                   y: { duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 },
                 }}
               >
@@ -404,18 +406,18 @@ export default function Home() {
               &copy; {new Date().getFullYear()} Minepanel. {t('allRightsReserved')}
             </p>
             <div className="flex space-x-4 text-gray-300">
-              <Link href={LINK} className="hover:text-emerald-400 transition-all hover:scale-105">
+              <Link href={LINK} className="hover:text-emerald-400 transition-colors hover:scale-105">
                 {t('help')}
               </Link>
               <Link
                 href={LINK_DOCUMENTATION}
-                className="hover:text-emerald-400 transition-all hover:scale-105"
+                className="hover:text-emerald-400 transition-colors hover:scale-105"
               >
                 {t('documentation')}
               </Link>
               <Link
                 href={LINK_GITHUB}
-                className="hover:text-emerald-400 transition-all hover:scale-105"
+                className="hover:text-emerald-400 transition-colors hover:scale-105"
               >
                 {t('github')}
               </Link>

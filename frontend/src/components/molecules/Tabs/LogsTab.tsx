@@ -134,7 +134,7 @@ export function LogsTab({ serverId, rconPort, rconPassword, serverStatus, isActi
   };
 
   return (
-    <Card className={`bg-gray-900/60 border-gray-700/50 shadow-lg transition-all duration-300 overflow-hidden`}>
+    <Card className={`bg-gray-900/60 border-gray-700/50 shadow-lg transition-colors duration-300 overflow-hidden`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-xl text-emerald-400 font-minecraft flex items-center gap-2">
