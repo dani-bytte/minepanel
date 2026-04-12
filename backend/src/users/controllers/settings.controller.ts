@@ -19,7 +19,14 @@ export class SettingsController {
     const [settings, proxy, network] = await Promise.all([this.settingsService.getSettings(user.userId), this.settingsService.getProxySettings(user.userId), this.settingsService.getNetworkSettings(user.userId)]);
 
     return {
-      ...settings,
+      id: settings.id,
+      userId: settings.userId,
+      cfApiKey: settings.cfApiKey,
+      discordWebhook: settings.discordWebhook,
+      language: settings.language,
+      preferences: settings.preferences,
+      createdAt: settings.createdAt,
+      updatedAt: settings.updatedAt,
       proxy,
       network,
     };

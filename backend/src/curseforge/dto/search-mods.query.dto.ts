@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SearchCurseforgeModsQueryDto {
@@ -24,6 +24,6 @@ export class SearchCurseforgeModsQueryDto {
   minecraftVersion: string;
 
   @IsOptional()
-  @IsEnum(['forge', 'neoforge', 'fabric', 'quilt'])
-  loader?: 'forge' | 'neoforge' | 'fabric' | 'quilt';
+  @IsString()
+  loader?: string;
 }

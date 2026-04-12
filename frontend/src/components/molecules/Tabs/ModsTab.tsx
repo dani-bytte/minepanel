@@ -81,7 +81,7 @@ export const ModsTab: FC<ModsTabProps> = ({ config, updateConfig }) => {
       }
     } catch (error) {
       console.error("Error importing API key:", error);
-      mcToast.error(t("noApiKeyConfigured"));
+      mcToast.error(t("errorLoadingServerInfo") || "Error importing API key");
     } finally {
       setIsImporting(false);
     }

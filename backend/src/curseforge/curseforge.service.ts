@@ -275,7 +275,7 @@ export class CurseforgeService {
       pageSize?: number;
       index?: number;
       minecraftVersion: string;
-      loader?: 'forge' | 'neoforge' | 'fabric' | 'quilt';
+      loader?: string;
     },
   ): Promise<NormalizedModSearchResponse> {
     if (!apiKey) {
@@ -397,13 +397,17 @@ export class CurseforgeService {
     if (normalized.includes('forge') && !normalized.includes('neoforge')) loaders.push('forge');
     if (normalized.includes('fabric')) loaders.push('fabric');
     if (normalized.includes('quilt')) loaders.push('quilt');
+    if (normalized.includes('paper')) loaders.push('paper');
+    if (normalized.includes('spigot')) loaders.push('spigot');
+    if (normalized.includes('purpur')) loaders.push('purpur');
+    if (normalized.includes('bukkit')) loaders.push('bukkit');
     return loaders;
   }
 
   private isCompatibleResult(
     mod: NormalizedModSearchResult,
     minecraftVersion: string,
-    loader?: 'forge' | 'neoforge' | 'fabric' | 'quilt',
+    loader?: string,
   ): boolean {
     const hasVersion = mod.supportedVersions.some((version) => version === minecraftVersion);
     if (!hasVersion) return false;

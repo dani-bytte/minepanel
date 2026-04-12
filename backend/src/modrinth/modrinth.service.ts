@@ -47,7 +47,7 @@ interface ModrinthSearchResponse {
 export class ModrinthService {
   private readonly apiClient: AxiosInstance;
   private readonly MODRINTH_API_BASE = 'https://api.modrinth.com/v2';
-  private readonly KNOWN_LOADERS = ['forge', 'neoforge', 'fabric', 'quilt'];
+  private readonly KNOWN_LOADERS = ['forge', 'neoforge', 'fabric', 'quilt', 'paper', 'purpur', 'spigot', 'velocity', 'bungeecord', 'waterfall', 'bukkit'];
 
   constructor() {
     this.apiClient = axios.create({
@@ -64,7 +64,7 @@ export class ModrinthService {
     limit?: number;
     offset?: number;
     minecraftVersion: string;
-    loader?: 'forge' | 'neoforge' | 'fabric' | 'quilt';
+    loader?: string;
   }): Promise<NormalizedModSearchResponse> {
     const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
     const offset = Math.max(query.offset ?? 0, 0);
@@ -138,7 +138,7 @@ export class ModrinthService {
   private isCompatibleResult(
     mod: NormalizedModSearchResult,
     minecraftVersion: string,
-    loader?: 'forge' | 'neoforge' | 'fabric' | 'quilt',
+    loader?: string,
   ): boolean {
     const hasVersion = mod.supportedVersions.some((version) => version === minecraftVersion);
     if (!hasVersion) return false;

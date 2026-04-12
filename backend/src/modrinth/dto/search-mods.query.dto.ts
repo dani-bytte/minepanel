@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class SearchModrinthModsQueryDto {
   @IsOptional()
@@ -24,6 +24,6 @@ export class SearchModrinthModsQueryDto {
   minecraftVersion: string;
 
   @IsOptional()
-  @IsEnum(['forge', 'neoforge', 'fabric', 'quilt'])
-  loader?: 'forge' | 'neoforge' | 'fabric' | 'quilt';
+  @IsString()
+  loader?: string;
 }
