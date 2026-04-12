@@ -58,6 +58,29 @@ export class CurseforgeController {
     });
   }
 
+  @Get('mods/:id')
+  async getMod(@Request() req, @Param('id') id: string) {
+    const user = req.user as PayloadToken;
+    const apiKey = await this.getApiKey(user.userId);
+    return this.curseforgeService.getMod(apiKey, Number.parseInt(id, 10));
+  }
+
+  @Get('mods/:id/dependencies')
+  async getRequiredDependencies(
+    @Request() req,
+    @Param('id') id: string,
+    @Query('minecraftVersion') minecraftVersion?: string,
+    @Query('loader') loader?: string,
+  ) {
+    const user = req.user as PayloadToken;
+    const apiKey = await this.getApiKey(user.userId);
+
+    return this.curseforgeService.getRequiredDependencies(apiKey, Number.parseInt(id, 10), {
+      minecraftVersion,
+      loader,
+    });
+  }
+
   @Get(':id')
   async getModpack(@Request() req, @Param('id') id: string) {
     const user = req.user as PayloadToken;

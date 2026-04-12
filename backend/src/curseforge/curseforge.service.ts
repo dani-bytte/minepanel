@@ -139,13 +139,22 @@ export interface NormalizedModSearchResponse {
   };
 }
 
+export interface ResolvedCurseforgeDependenciesResponse {
+  data: NormalizedModSearchResult[];
+}
+
 @Injectable()
 export class CurseforgeService {
   private readonly apiClient: AxiosInstance;
   private readonly CURSEFORGE_API_BASE = 'https://api.curseforge.com/v1';
+  private readonly MINECRAFT_VERSION_MANIFEST_URL = 'https://launchermeta.mojang.com/mc/game/version_manifest.json';
   private readonly MINECRAFT_GAME_ID = 432;
   private readonly MODS_CLASS_ID = 6;
   private readonly MODPACK_CLASS_ID = 4471;
+  private readonly LATEST_VERSION_CACHE_TTL_MS = 60 * 60 * 1000;
+  private readonly REQUIRED_DEPENDENCY_RELATION_TYPE = 3;
+  private latestReleaseCache?: { value: string; fetchedAt: number };
+  private readonly modCache = new Map<number, CurseForgeModpack>();
 
   constructor() {
     this.apiClient = axios.create({
@@ -260,6 +269,95 @@ export class CurseforgeService {
     }
   }
 
+  async getMod(apiKey: string, modId: number): Promise<CurseForgeModpack> {
+    if (!apiKey) {
+      throw new HttpException(
+        'CurseForge API key not configured',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const cached = this.modCache.get(modId);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const client = this.getApiClient(apiKey);
+      const response = await client.get<CurseForgeModResponse>(`/mods/${modId}`);
+      const mod = response.data.data;
+      this.modCache.set(modId, mod);
+      return mod;
+    } catch (error) {
+      console.error('Error fetching CurseForge mod:', error);
+
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 403) {
+          throw new HttpException(
+            'Invalid CurseForge API key',
+            HttpStatus.FORBIDDEN,
+          );
+        }
+        if (error.response?.status === 404) {
+          throw new HttpException(
+            'Mod not found',
+            HttpStatus.NOT_FOUND,
+          );
+        }
+        throw new HttpException(
+          error.response?.data?.message || 'Error fetching mod',
+          error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      throw new HttpException(
+        'Error fetching mod',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getRequiredDependencies(
+    apiKey: string,
+    modId: number,
+    query?: {
+      minecraftVersion?: string;
+      loader?: string;
+    },
+  ): Promise<ResolvedCurseforgeDependenciesResponse> {
+    const rootMod = await this.getMod(apiKey, modId);
+    const minecraftVersion = query?.minecraftVersion
+      ? await this.resolveMinecraftVersion(query.minecraftVersion)
+      : undefined;
+    const normalizedLoader = this.normalizeLoader(query?.loader);
+    const visited = new Set<number>([modId]);
+    const resolved: NormalizedModSearchResult[] = [];
+
+    const walk = async (currentModId: number): Promise<void> => {
+      if (visited.has(currentModId)) return;
+      visited.add(currentModId);
+
+      const dependencyMod = await this.getMod(apiKey, currentModId);
+      const nestedRequiredIds = this.extractRequiredDependencyIds(dependencyMod, minecraftVersion);
+
+      for (const nestedId of nestedRequiredIds) {
+        await walk(nestedId);
+      }
+
+      const normalized = this.normalizeMod(dependencyMod);
+      if (!minecraftVersion || this.isCompatibleResult(normalized, minecraftVersion, normalizedLoader)) {
+        resolved.push(normalized);
+      }
+    };
+
+    const requiredIds = this.extractRequiredDependencyIds(rootMod, minecraftVersion);
+    for (const requiredId of requiredIds) {
+      await walk(requiredId);
+    }
+
+    return { data: resolved };
+  }
+
   async getFeaturedModpacks(apiKey: string, limit: number = 10): Promise<CurseForgeSearchResponse> {
     return this.searchModpacks(apiKey, undefined, limit, 0, 1, 'desc');
   }
@@ -290,6 +388,8 @@ export class CurseforgeService {
       ? requestedPageSize
       : Math.min(requestedPageSize + 1, 50);
     const index = Math.max(query.index ?? 0, 0);
+    const normalizedLoader = this.normalizeLoader(query.loader);
+    const minecraftVersion = await this.resolveMinecraftVersion(query.minecraftVersion);
     const maxBatches = 8;
 
     try {
@@ -310,14 +410,15 @@ export class CurseforgeService {
             index: batchIndex,
             sortField: 2,
             sortOrder: 'desc',
-            gameVersion: query.minecraftVersion,
+            gameVersion: minecraftVersion,
+            modLoaderType: this.mapLoaderToCurseforgeType(normalizedLoader),
           },
         });
 
         totalCount = response.data.pagination.totalCount;
         const compatibleBatch = response.data.data
           .map((mod) => this.normalizeMod(mod))
-          .filter((mod) => this.isCompatibleResult(mod, query.minecraftVersion, query.loader));
+          .filter((mod) => this.isCompatibleResult(mod, minecraftVersion, normalizedLoader));
 
         for (const mod of compatibleBatch) {
           if (normalized.length >= pageSize) break;
@@ -376,6 +477,16 @@ export class CurseforgeService {
       }
     }
 
+    for (const fileIndex of mod.latestFilesIndexes ?? []) {
+      if (fileIndex.gameVersion) {
+        versions.add(fileIndex.gameVersion);
+      }
+      const mappedLoader = this.mapCurseforgeTypeToLoader(fileIndex.modLoader);
+      if (mappedLoader) {
+        loaders.add(mappedLoader);
+      }
+    }
+
     return {
       provider: 'curseforge',
       projectId: mod.id.toString(),
@@ -388,6 +499,34 @@ export class CurseforgeService {
       supportedVersions: Array.from(versions),
       supportedLoaders: Array.from(loaders),
     };
+  }
+
+  private extractRequiredDependencyIds(mod: CurseForgeModpack, minecraftVersion?: string): number[] {
+    const dependencyIds = new Set<number>();
+
+    for (const file of mod.latestFiles ?? []) {
+      if (minecraftVersion && !(file.gameVersions ?? []).includes(minecraftVersion)) {
+        continue;
+      }
+
+      for (const dependency of file.dependencies ?? []) {
+        if (dependency.relationType === this.REQUIRED_DEPENDENCY_RELATION_TYPE) {
+          dependencyIds.add(dependency.modId);
+        }
+      }
+    }
+
+    if (dependencyIds.size === 0) {
+      for (const file of mod.latestFiles ?? []) {
+        for (const dependency of file.dependencies ?? []) {
+          if (dependency.relationType === this.REQUIRED_DEPENDENCY_RELATION_TYPE) {
+            dependencyIds.add(dependency.modId);
+          }
+        }
+      }
+    }
+
+    return Array.from(dependencyIds);
   }
 
   private extractLoadersFromGameVersion(version: string): string[] {
@@ -414,6 +553,75 @@ export class CurseforgeService {
 
     if (!loader) return true;
     if (mod.supportedLoaders.length === 0) return true;
-    return mod.supportedLoaders.includes(loader);
+    return mod.supportedLoaders.includes(this.normalizeLoader(loader) ?? loader);
+  }
+
+  private normalizeLoader(loader?: string): string | undefined {
+    if (!loader) return undefined;
+    const normalized = loader.toLowerCase().trim();
+    const aliases: Record<string, string> = {
+      'neo-forge': 'neoforge',
+    };
+    return aliases[normalized] ?? normalized;
+  }
+
+  private mapLoaderToCurseforgeType(loader?: string): number | undefined {
+    if (!loader) return undefined;
+
+    const mapping: Record<string, number> = {
+      forge: 1,
+      fabric: 4,
+      quilt: 5,
+      neoforge: 6,
+    };
+
+    return mapping[loader];
+  }
+
+  private mapCurseforgeTypeToLoader(type?: number): string | undefined {
+    if (type === undefined || type === null) return undefined;
+
+    const mapping: Record<number, string> = {
+      1: 'forge',
+      4: 'fabric',
+      5: 'quilt',
+      6: 'neoforge',
+    };
+
+    return mapping[type];
+  }
+
+  private async resolveMinecraftVersion(version: string): Promise<string> {
+    const normalized = version?.trim();
+    if (!normalized) return version;
+
+    const lower = normalized.toLowerCase();
+    const shouldResolveLatest =
+      lower === 'latest' || lower === 'latest_release' || lower === 'release';
+
+    if (!shouldResolveLatest) {
+      return normalized;
+    }
+
+    const now = Date.now();
+    if (this.latestReleaseCache && now - this.latestReleaseCache.fetchedAt < this.LATEST_VERSION_CACHE_TTL_MS) {
+      return this.latestReleaseCache.value;
+    }
+
+    try {
+      const response = await axios.get<{ latest?: { release?: string } }>(this.MINECRAFT_VERSION_MANIFEST_URL, {
+        timeout: 5000,
+      });
+
+      const release = response.data?.latest?.release;
+      if (release) {
+        this.latestReleaseCache = { value: release, fetchedAt: now };
+        return release;
+      }
+    } catch (error) {
+      console.warn('Could not resolve latest Minecraft release, using provided version.', error);
+    }
+
+    return normalized;
   }
 }

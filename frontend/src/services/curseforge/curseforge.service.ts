@@ -1,4 +1,6 @@
 import api from "../axios.service";
+import type { ModLoader } from "../mods/mods-browser.service";
+import type { ModSearchItem } from "../mods/mods-browser.service";
 
 export interface CurseForgeAuthor {
   id: number;
@@ -170,6 +172,25 @@ export const getModpack = async (id: number): Promise<CurseForgeModpack> => {
     return response.data.data;
   } catch (error) {
     console.error("Error fetching modpack:", error);
+    throw error;
+  }
+};
+
+export const getRequiredDependencies = async (
+  id: number,
+  minecraftVersion: string,
+  loader?: ModLoader,
+): Promise<ModSearchItem[]> => {
+  try {
+    const response = await api.get<{ data: ModSearchItem[] }>(`/curseforge/mods/${id}/dependencies`, {
+      params: {
+        minecraftVersion,
+        loader,
+      },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error("Error fetching required dependencies:", error);
     throw error;
   }
 };

@@ -30,7 +30,7 @@ interface ModsBrowserDialogProps {
   minecraftVersion: string;
   loader?: ModLoader;
   isAdded: (mod: ModSearchItem) => boolean;
-  onToggle: (mod: ModSearchItem, insertAs: 'slug' | 'id') => 'added' | 'removed' | 'noop';
+  onToggle: (mod: ModSearchItem, insertAs: 'slug' | 'id') => Promise<'added' | 'removed' | 'noop'>;
 }
 
 const PAGE_SIZE_BY_PROVIDER: Record<ModProvider, number> = {
@@ -55,8 +55,15 @@ export function ModsBrowserDialog({
   onToggle,
 }: Readonly<ModsBrowserDialogProps>) {
   const { t } = useLanguage();
+  const loaderOptions: Array<{ value: ModLoader; label: string }> = [
+    { value: 'forge', label: 'Forge' },
+    { value: 'neoforge', label: 'NeoForge' },
+    { value: 'fabric', label: 'Fabric' },
+    { value: 'quilt', label: 'Quilt' },
+  ];
   const [query, setQuery] = useState('');
   const [insertAs, setInsertAs] = useState<'slug' | 'id'>('slug');
+  const [selectedLoader, setSelectedLoader] = useState<ModLoader | 'all'>(loader ?? 'all');
   const [isLoadingInitial, setIsLoadingInitial] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [results, setResults] = useState<ModSearchItem[]>([]);
@@ -68,6 +75,10 @@ export function ModsBrowserDialog({
   const providerLabel = useMemo(() => {
     return provider === 'curseforge' ? 'CurseForge' : 'Modrinth';
   }, [provider]);
+
+  useEffect(() => {
+    setSelectedLoader(loader ?? 'all');
+  }, [loader, open]);
 
   const fetchPage = useCallback(
     async (nextPageIndex: number, reset: boolean = false) => {
@@ -83,7 +94,7 @@ export function ModsBrowserDialog({
         const response = await searchModsByProvider(provider, {
           q: query.trim() || undefined,
           minecraftVersion,
-          loader,
+          loader: selectedLoader === 'all' ? undefined : selectedLoader,
           pageSize,
           index: nextPageIndex * pageSize,
           limit: pageSize,
@@ -119,7 +130,7 @@ export function ModsBrowserDialog({
         setIsLoadingMore(false);
       }
     },
-    [open, minecraftVersion, provider, query, loader, pageSize, t],
+    [open, minecraftVersion, provider, query, selectedLoader, pageSize, t],
   );
 
   useEffect(() => {
@@ -131,7 +142,7 @@ export function ModsBrowserDialog({
     }, 350);
 
     return () => clearTimeout(timeout);
-  }, [open, query, provider, minecraftVersion, loader, fetchPage]);
+  }, [open, query, provider, minecraftVersion, selectedLoader, fetchPage]);
 
   useEffect(() => {
     const target = loadMoreRef.current;
@@ -152,7 +163,8 @@ export function ModsBrowserDialog({
   }, [open, hasMore, isLoadingInitial, isLoadingMore, pageIndex, fetchPage]);
 
   const handleToggleMod = (mod: ModSearchItem) => {
-    const status = onToggle(mod, insertAs);
+    void (async () => {
+      const status = await onToggle(mod, insertAs);
     if (status === 'added') {
       mcToast.success(`${t('addMod')}: ${insertAs === 'id' ? mod.projectId : mod.slug}`);
       return;
@@ -162,6 +174,7 @@ export function ModsBrowserDialog({
       return;
     }
     mcToast.error(t('alreadyAdded'));
+    })();
   };
 
   return (
@@ -174,9 +187,9 @@ export function ModsBrowserDialog({
           </DialogTitle>
           <p className="text-xs text-gray-400">
             {t('searchModsDesc')} {minecraftVersion}
-            {loader ? ` / ${loader}` : ''}
+            {selectedLoader !== 'all' ? ` / ${selectedLoader}` : ''}
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-3">
             <div className="relative min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
@@ -195,12 +208,30 @@ export function ModsBrowserDialog({
                 <SelectItem value="id">{t('insertAsId')}</SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={selectedLoader}
+              onValueChange={(value: ModLoader | 'all') => setSelectedLoader(value)}
+            >
+              <SelectTrigger className="h-12 w-full bg-gray-800 border-gray-600/80 text-gray-200 font-minecraft">
+                <SelectValue placeholder="Loader" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-700 text-gray-200">
+                <SelectItem value="all">All loaders</SelectItem>
+                {loaderOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-2 text-xs text-blue-300">
             <Filter className="h-3.5 w-3.5" />
             {t('compatibilityFiltered')}
           </div>
-          {!loader && <p className="text-xs text-amber-300/90">{t('loaderNotDetected')}</p>}
+          {!loader && selectedLoader === 'all' && (
+            <p className="text-xs text-amber-300/90">{t('loaderNotDetected')}</p>
+          )}
         </div>
 
         <div className="overflow-y-auto max-h-[calc(82vh-165px)] p-6">

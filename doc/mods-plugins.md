@@ -71,6 +71,9 @@ Minepanel includes an integrated search dialog in the **Mods** tab for both **Cu
 - Filters results by current server compatibility:
   - Minecraft version
   - Loader (Forge/Neoforge/Fabric/Quilt) when available
+- Resolves `latest` Minecraft version to the current release before querying providers
+- Lets you override loader filter manually in the search dialog when auto-detection is not available
+- When adding a CurseForge mod, also appends its required dependency chain when available
 - Adds entries in one click as:
   - **Slug** (default)
   - **ID**

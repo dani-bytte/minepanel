@@ -19,6 +19,7 @@ import { mcToast } from "@/lib/utils/minecraft-toast";
 import { CurseForgeModpack } from "@/services/curseforge/curseforge.service";
 import { ModsBrowserDialog } from "@/components/molecules/mods/ModsBrowserDialog";
 import { ModLoader, ModProvider, ModSearchItem } from "@/services/mods/mods-browser.service";
+import { getRequiredDependencies } from "@/services/curseforge/curseforge.service";
 
 const ModpackBrowser = dynamic(() => import("@/components/molecules/modpacks/ModpackBrowser").then(mod => mod.ModpackBrowser), {
   ssr: false,
@@ -93,6 +94,23 @@ export const ModsTab: FC<ModsTabProps> = ({ config, updateConfig }) => {
     setShowModsBrowser(true);
   };
 
+  const appendUniqueEntries = (currentValue: string, entriesToAdd: string[]): string => {
+    const entries = parseEntries(currentValue);
+    const seen = new Set(entries.map((entry) => entry.toLowerCase()));
+    const nextEntries = [...entries];
+
+    for (const entry of entriesToAdd) {
+      const normalized = entry.trim();
+      if (!normalized) continue;
+      const key = normalized.toLowerCase();
+      if (seen.has(key)) continue;
+      nextEntries.push(normalized);
+      seen.add(key);
+    }
+
+    return nextEntries.join("\n");
+  };
+
   const parseEntries = (value: string): string[] =>
     value
       .split(/[\n,]+/)
@@ -126,7 +144,7 @@ export const ModsTab: FC<ModsTabProps> = ({ config, updateConfig }) => {
     });
   };
 
-  const toggleModFromBrowser = (mod: ModSearchItem, insertAs: "slug" | "id"): "added" | "removed" | "noop" => {
+  const toggleModFromBrowser = async (mod: ModSearchItem, insertAs: "slug" | "id"): Promise<"added" | "removed" | "noop"> => {
     const currentValue = String(config[modsTargetField] || "");
     const entries = parseEntries(currentValue);
     const slug = mod.slug.toLowerCase();
@@ -145,7 +163,26 @@ export const ModsTab: FC<ModsTabProps> = ({ config, updateConfig }) => {
     }
 
     const toInsert = insertAs === "id" ? mod.projectId : mod.slug;
-    updateConfig(modsTargetField, [...entries, toInsert].join("\n"));
+    const entriesToAdd = [toInsert];
+
+    if (modsBrowserProvider === "curseforge") {
+      try {
+        const dependencies = await getRequiredDependencies(
+          Number.parseInt(mod.projectId, 10),
+          config.minecraftVersion,
+          resolvedLoader,
+        );
+
+        for (const dependency of dependencies) {
+          entriesToAdd.unshift(insertAs === "id" ? dependency.projectId : dependency.slug);
+        }
+      } catch (error) {
+        console.error("Error resolving CurseForge dependencies:", error);
+        mcToast.error(t("errorSearchingMods"));
+      }
+    }
+
+    updateConfig(modsTargetField, appendUniqueEntries(currentValue, entriesToAdd));
     return "added";
   };
 

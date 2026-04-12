@@ -47,7 +47,10 @@ interface ModrinthSearchResponse {
 export class ModrinthService {
   private readonly apiClient: AxiosInstance;
   private readonly MODRINTH_API_BASE = 'https://api.modrinth.com/v2';
+  private readonly MINECRAFT_VERSION_MANIFEST_URL = 'https://launchermeta.mojang.com/mc/game/version_manifest.json';
+  private readonly LATEST_VERSION_CACHE_TTL_MS = 60 * 60 * 1000;
   private readonly KNOWN_LOADERS = ['forge', 'neoforge', 'fabric', 'quilt', 'paper', 'purpur', 'spigot', 'velocity', 'bungeecord', 'waterfall', 'bukkit'];
+  private latestReleaseCache?: { value: string; fetchedAt: number };
 
   constructor() {
     this.apiClient = axios.create({
@@ -68,14 +71,16 @@ export class ModrinthService {
   }): Promise<NormalizedModSearchResponse> {
     const limit = Math.min(Math.max(query.limit ?? 20, 1), 50);
     const offset = Math.max(query.offset ?? 0, 0);
+    const normalizedLoader = this.normalizeLoader(query.loader);
+    const minecraftVersion = await this.resolveMinecraftVersion(query.minecraftVersion);
 
     const facets: string[][] = [
       ['project_type:mod'],
-      [`versions:${query.minecraftVersion}`],
+      [`versions:${minecraftVersion}`],
     ];
 
-    if (query.loader) {
-      facets.push([`categories:${query.loader}`]);
+    if (normalizedLoader) {
+      facets.push([`categories:${normalizedLoader}`]);
     }
 
     try {
@@ -91,7 +96,7 @@ export class ModrinthService {
 
       const normalized = response.data.hits
         .map((hit) => this.normalizeHit(hit))
-        .filter((mod) => this.isCompatibleResult(mod, query.minecraftVersion, query.loader));
+        .filter((mod) => this.isCompatibleResult(mod, minecraftVersion, normalizedLoader));
 
       return {
         data: normalized,
@@ -145,6 +150,49 @@ export class ModrinthService {
 
     if (!loader) return true;
     if (mod.supportedLoaders.length === 0) return true;
-    return mod.supportedLoaders.includes(loader);
+    return mod.supportedLoaders.includes(this.normalizeLoader(loader) ?? loader);
+  }
+
+  private normalizeLoader(loader?: string): string | undefined {
+    if (!loader) return undefined;
+    const normalized = loader.toLowerCase().trim();
+    const aliases: Record<string, string> = {
+      'neo-forge': 'neoforge',
+    };
+    return aliases[normalized] ?? normalized;
+  }
+
+  private async resolveMinecraftVersion(version: string): Promise<string> {
+    const normalized = version?.trim();
+    if (!normalized) return version;
+
+    const lower = normalized.toLowerCase();
+    const shouldResolveLatest =
+      lower === 'latest' || lower === 'latest_release' || lower === 'release';
+
+    if (!shouldResolveLatest) {
+      return normalized;
+    }
+
+    const now = Date.now();
+    if (this.latestReleaseCache && now - this.latestReleaseCache.fetchedAt < this.LATEST_VERSION_CACHE_TTL_MS) {
+      return this.latestReleaseCache.value;
+    }
+
+    try {
+      const response = await axios.get<{ latest?: { release?: string } }>(this.MINECRAFT_VERSION_MANIFEST_URL, {
+        timeout: 5000,
+      });
+
+      const release = response.data?.latest?.release;
+      if (release) {
+        this.latestReleaseCache = { value: release, fetchedAt: now };
+        return release;
+      }
+    } catch (error) {
+      console.warn('Could not resolve latest Minecraft release, using provided version.', error);
+    }
+
+    return normalized;
   }
 }
